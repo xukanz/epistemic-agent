@@ -61,9 +61,11 @@ Present the trimmed schema as a draft. Write the file only after approval.
 ### Step 5 — Confirm the inventory source
 
 Ask where the repo list comes from: a VCS API, an export, a spreadsheet. Do not
-guess URLs or API endpoints. Write a `scripts/bootstrap.py` that reads that
-source and emits an ingest payload; the deterministic path should carry as much
-as it can before any LLM is involved.
+guess URLs or API endpoints. Then follow `skills/bootstrap-instance.md` to
+produce `scripts/bootstrap.py` — the template ships a config-driven generic
+version that needs no code for a flat, one-record-per-repo source; the skill
+covers both that path and the hand-written fallback for sources that need
+real parsing.
 
 ## Workflow
 
@@ -72,14 +74,18 @@ as it can before any LLM is involved.
 and the review queue before deciding anything.
 
 ### B — Ingest → Evolve
-1. `skills/ingest-data.md` — read sources, extract entities, ground, commit.
-2. `skills/evolve-kg.md` — refine, merge, split, deprecate as understanding grows.
+1. `skills/bootstrap-instance.md` — first run only, or when a new source shows up.
+2. `skills/ingest-data.md` — read sources, extract entities, ground, commit.
+3. `skills/seed-vocabulary.md` — after a bootstrap floods
+   `kg/vocabulary-suggestions.md`, cluster and curate the instance vocabulary
+   instead of transcribing terms by hand.
+4. `skills/evolve-kg.md` — refine, merge, split, deprecate as understanding grows.
 
 ### C — Analyse
-3. `skills/analyse-coverage.md` — run the five views and interpret them.
+5. `skills/analyse-coverage.md` — run the five views and interpret them.
 
 ### D — Review
-4. `skills/review-status.md` — work the queue; apply decisions back to the KG.
+6. `skills/review-status.md` — work the queue; apply decisions back to the KG.
 
 ## Rules that are not negotiable
 
@@ -120,6 +126,7 @@ it deserves a first-class type. Never leave a pattern permanently in Untyped.
 | `kg/changelog.md` | Audit trail of every mutation |
 | `kg/health-manifest.json` | Quality + capability signals (`capmap health`) |
 | `kg/vocabulary-suggestions.md` | Ungrounded labels awaiting a vocabulary decision |
+| `kg/vocabulary-draft/` | `capmap vocab-draft` output — clustered, unreviewed, never loaded |
 | `data/raw/` | Drop zone for source material |
 | `review/items.jsonl` | Pending review items |
 | `review/decisions.jsonl` | Logged human decisions |

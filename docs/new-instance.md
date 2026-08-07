@@ -37,9 +37,15 @@ claude
 
 ## 3. 写 bootstrap
 
-`scripts/bootstrap.py` 读你们的仓库清单，产出摄取 payload。原则：
+`scripts/bootstrap.py` 读你们的仓库清单，产出摄取 payload。**先试模板自带的通用脚本**——
+如果清单本来就是"一条记录一个仓库"的扁平结构（path/team/domain/tech/...），
+在 `config/project.yaml` 的 `bootstrap:` 块里填一段字段映射就能跑，不用写代码。
 
-**能用代码抽的绝不用 LLM。** 依赖清单、CI 配置、仓库元数据都是机器可读的。参考 `instances/acme-gitlab-agents/scripts/bootstrap.py`。
+清单要 join 多份异构产物、要解析 markdown 表格、或者要在 bootstrap 阶段就做词表相关的
+噪声/主机名判断（参考 `instances/acme-gitlab-agents/scripts/bootstrap.py`）时，通用脚本才不够用，
+这时候按 `skills/bootstrap-instance.md` 手写，原则不变：
+
+**能用代码抽的绝不用 LLM。** 依赖清单、CI 配置、仓库元数据都是机器可读的。
 
 **不要猜 URL 和 API 端点。** 问清楚清单从哪来。错的端点会安静地产出空图。
 
@@ -47,7 +53,17 @@ claude
 
 ## 4. 建实例词表
 
-`vocabulary/` 下按框架分片的同样格式写：
+新实例的词表通常从空开始，第一轮 `capmap ingest` 会把几乎所有 TechStack/InternalSystem
+标签判成 ungrounded，堆进 `kg/vocabulary-suggestions.md`。不用从这份清单里一条条手抄：
+
+```bash
+capmap vocab-draft payload.bootstrap.json   # 或 --from-suggestions
+```
+
+这一步纯字符串聚类（归一化后完全相同的直接分一组，剩下的按相似度模糊聚类，但主机名类
+标签不参与模糊聚类），产出 `kg/vocabulary-draft/*.yaml` 草稿——不会被当成正式词表加载，
+也不会自动写进 `vocabulary/`。哪些组是真的组织内部系统、该不该单独立术语，这一步做不到，
+交给 `skills/seed-vocabulary.md` 逐组过一遍再定稿，同样按框架分片的格式写进 `vocabulary/`：
 
 ```yaml
 shard: internal-system
@@ -61,7 +77,7 @@ terms:
 
 放这里而不是改框架分片，是为了下一个组织还能复用这个框架。
 
-**主机名不要做模糊匹配。** 主机名是标识符。`sso.acme.example` 和 `app.acme.example` 共享 acme 和 example 两段，模糊匹配会把它们判成同一个系统。要么走精确别名，要么在 bootstrap 里显式处理（参见那个实例对 `internal_terms` 的做法）。
+**主机名不要做模糊匹配。** 主机名是标识符。`sso.acme.example` 和 `app.acme.example` 共享 acme 和 example 两段，模糊匹配会把它们判成同一个系统。`capmap vocab-draft` 已经把这类标签排除在模糊聚类之外，但定稿时还是要过一眼；线上判断要么走精确别名，要么在 bootstrap 里显式处理（参见那个实例对 `internal_terms` 的做法）。
 
 ## 5. 跑起来
 
@@ -99,7 +115,7 @@ capmap review --reviewer <name>
 
 **按类型批处理，不要按优先级顺序。** 连着判二十条接地候选很快，因为上下文是共享的；在接地和重复判断之间来回切换又慢又容易判错。
 
-队列涨得比处理得快，说明阈值对这个语料不合适，不是审的人太慢。按这个顺序调：先加词表别名（一条别名能消掉后面几十条），再调重复检测阈值，最后才考虑收窄路由范围 —— 收窄之后条目不再出现，但不确定性并没有消失。
+队列涨得比处理得快，说明阈值对这个语料不合适，不是审的人太慢。按这个顺序调：先加词表别名（一条别名能消掉后面几十条，`capmap vocab-draft --from-suggestions` + `skills/seed-vocabulary.md` 批量做这一步），再调重复检测阈值，最后才考虑收窄路由范围 —— 收窄之后条目不再出现，但不确定性并没有消失。
 
 ## 常见坑
 

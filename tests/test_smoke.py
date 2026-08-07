@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from epistemic_agent.analysis import views as V
+from epistemic_agent.bootstrap.generic import run_generic_bootstrap
 from epistemic_agent.ingest.document import ground_payload, ingest_entities
 from epistemic_agent.kg.store import GraphStore, edge_id
 from epistemic_agent.merge.canonical import (
@@ -26,6 +27,11 @@ from epistemic_agent.merge.strategies import (
     strategies_from_config,
 )
 from epistemic_agent.onto.client import LocalVocabulary
+from epistemic_agent.onto.draft import (
+    build_vocab_draft,
+    labels_from_suggestions_md,
+    write_draft_files,
+)
 
 # ---------------------------------------------------------------------------
 # Normalisation
@@ -112,6 +118,115 @@ def test_grounding_bands():
     v = LocalVocabulary()
     assert v.ground("LangGraph").status == "grounded"
     assert v.ground("zzzz-not-a-real-technology").status == "ungrounded"
+
+
+# ---------------------------------------------------------------------------
+# Generic bootstrap
+
+
+def test_generic_bootstrap_maps_fields_and_splits_multi_value_tech(tmp_path):
+    """A flat, one-record-per-repo source should need only a `bootstrap:`
+    field-mapping config, not a hand-written script — this is the shape
+    acme-corp's bootstrap.py used to hard-code."""
+    (tmp_path / "seed.yaml").write_text(
+        "items:\n"
+        "  - repo_path: team-a/svc\n"
+        "    squad: team-a\n"
+        "    stack: LangGraph, FastAPI/Starlette\n"
+    )
+    config = {
+        "bootstrap": {
+            "format": "yaml",
+            "file": "seed.yaml",
+            "list_key": "items",
+            "fields": {"path": "repo_path", "team": "squad", "tech": "stack"},
+        }
+    }
+    payload, report = run_generic_bootstrap(config, tmp_path)
+    tech_labels = {n["label"] for n in payload["nodes"] if n["type"] == "TechStack"}
+    assert tech_labels == {"LangGraph", "FastAPI", "Starlette"}
+    team = next(n for n in payload["nodes"] if n["type"] == "Team")
+    assert team["kind"] == "group"
+    assert report["repos_without_domain"] == 1
+
+
+def test_generic_bootstrap_marks_inferred_team_kind_unknown(tmp_path):
+    """No `team` field mapped means the team name came from the path, not a
+    deliberate assignment — must not silently claim `kind: group`, the same
+    guessing acme-gitlab-agents' bootstrap.py refuses to do."""
+    (tmp_path / "seed.yaml").write_text("items:\n  - path: team-a/svc\n")
+    config = {"bootstrap": {"file": "seed.yaml", "list_key": "items"}}
+    payload, report = run_generic_bootstrap(config, tmp_path)
+    team = next(n for n in payload["nodes"] if n["type"] == "Team")
+    assert team["kind"] == "unknown"
+    assert report["repos_without_team_field"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Vocabulary draft clustering
+
+
+def test_vocab_draft_clusters_case_variants_via_exact_normalisation():
+    labels = [
+        {"label": "Atlas", "type": "TechStack", "node_id": "a"},
+        {"label": "ATLAS", "type": "TechStack", "node_id": "b"},
+        {"label": "atlas", "type": "TechStack", "node_id": "c"},
+    ]
+    drafts = build_vocab_draft(labels)
+    terms = drafts["TechStack"]["terms"]
+    assert len(terms) == 1
+    assert set(terms[0]["_raw_variants"]) == {"Atlas", "ATLAS", "atlas"}
+
+
+def test_vocab_draft_fuzzy_merges_near_duplicate_spellings():
+    """A one-character typo survives the exact layer (different normalised
+    forms) but should still land in one group via the fuzzy pass."""
+    labels = [
+        {"label": "Kubernetes", "type": "TechStack", "node_id": "a"},
+        {"label": "Kubernets", "type": "TechStack", "node_id": "b"},
+    ]
+    drafts = build_vocab_draft(labels, fuzzy_threshold=0.90)
+    terms = drafts["TechStack"]["terms"]
+    assert len(terms) == 1
+    assert set(terms[0]["_raw_variants"]) == {"Kubernetes", "Kubernets"}
+
+
+def test_vocab_draft_never_fuzzy_merges_hostnames():
+    """`sso.acme.example` and `app.acme.example` score well above this
+    threshold on token_sort_ratio and would merge if not excluded —
+    docs/new-instance.md calls this out as the mistake to avoid: hostnames
+    are identifiers, not labels."""
+    labels = [
+        {"label": "sso.acme.example", "type": "InternalSystem", "node_id": "a"},
+        {"label": "app.acme.example", "type": "InternalSystem", "node_id": "b"},
+    ]
+    drafts = build_vocab_draft(labels, fuzzy_threshold=0.75)
+    terms = drafts["InternalSystem"]["terms"]
+    assert len(terms) == 2
+    assert all(t["_hostname"] for t in terms)
+
+
+def test_vocab_draft_writes_outside_vocabulary_dir_and_is_not_loaded(tmp_path):
+    """A draft must never be picked up by LocalVocabulary's `*.yaml` glob
+    before a human has reviewed it."""
+    drafts = build_vocab_draft([{"label": "Atlas", "type": "TechStack", "node_id": "a"}])
+    out_dir = tmp_path / "kg" / "vocabulary-draft"
+    written = write_draft_files(drafts, out_dir)
+    assert written and all(p.parent == out_dir for p in written)
+
+    vocab_dir = tmp_path / "vocabulary"
+    vocab_dir.mkdir()
+    assert LocalVocabulary(shard_dirs=[vocab_dir]).term_count == 0
+
+
+def test_labels_from_suggestions_md_parses_bullet_lines():
+    text = (
+        "# Vocabulary suggestions\n\n## 2026-08-07\n\n"
+        "- `yq` — TechStack (tech-yq)\n"
+    )
+    assert labels_from_suggestions_md(text) == [
+        {"label": "yq", "type": "TechStack", "node_id": "tech-yq"}
+    ]
 
 
 # ---------------------------------------------------------------------------
