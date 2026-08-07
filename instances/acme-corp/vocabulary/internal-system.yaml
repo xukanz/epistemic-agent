@@ -1,0 +1,19 @@
+shard: internal-system
+target_type: TechStack
+label: Internal systems
+description: |
+  Systems that exist only inside Acme Corp — nobody outside the company
+  could stand up an equivalent by signing up for an account. This is what
+  makes `DEPENDS_ON_INTERNAL` meaningful: a repo that depends on Snowflake
+  can be replatformed by any customer; a repo that depends on Atlas cannot.
+
+terms:
+  - id: is:atlas
+    label: Atlas
+    aliases: [atlas]
+  - id: is:beacon
+    label: Beacon
+    aliases: [beacon]
+  - id: is:forge
+    label: Forge
+    aliases: [forge]

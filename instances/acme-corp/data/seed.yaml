@@ -1,0 +1,272 @@
+# Fictional seed data for the "Acme Corp" example instance.
+#
+# Every repo, team, path, and description here is invented for this example.
+# None of it is scanned from a real organisation. The technology names in
+# `tech:` are real public products (LangGraph, FastAPI, Kubernetes, ...) —
+# that part is deliberately realistic, since the whole point of the example
+# is to demonstrate coverage/duplicates/gaps/experts/risk on a plausible
+# stack. The internal systems (Atlas / Beacon / Forge) are fictional and
+# defined in ../vocabulary/internal-system.yaml.
+#
+# Signals deliberately built into this data, so a fresh run of the pipeline
+# reproduces something worth looking at in each of the five views:
+#   - duplicates:   platform/agent-gateway and growth/model-router — two
+#                   teams, same domain, near-identical stack, unrelated paths
+#   - fork/copy:    growth/support-agent is a same-name copy of
+#                   mobile/support-agent — the `duplicates` view should
+#                   classify it as `same-name`, not `independent`
+#   - bus factor=1: dbt, snowflake, okta-style oauth2 usage each belong to
+#                   exactly one team
+#   - internal lock-in: `atlas` is depended on by more than half the repos
+#   - stale repo:   api-gateway/legacy-router has an old last_commit
+
+repos:
+  - path: platform/agent-gateway
+    team: platform
+    domain: "Platform / Gateway / Framework"
+    name: "Agent Gateway"
+    description: "Routes model calls through Portkey with per-team rate limits and request logging."
+    value: "Central place every other team's agent traffic passes through before it reaches a model provider."
+    last_commit: "2026-06-02"
+    tech: [portkey, fastapi, langgraph, redis]
+    internal_systems: [atlas]
+
+  - path: growth/model-router
+    team: growth
+    domain: "Platform / Gateway / Framework"
+    name: "Model Router"
+    description: "Growth team's own request router in front of Portkey, built independently of the platform team's gateway."
+    value: "Adds per-experiment routing rules on top of the shared model gateway."
+    last_commit: "2026-05-20"
+    tech: [portkey, fastapi, langgraph, redis, qdrant]
+    internal_systems: [atlas]
+
+  - path: data-eng/etl-orchestrator
+    team: data-eng
+    domain: "Data Platform / Architecture"
+    name: "ETL Orchestrator"
+    description: "Schedules and monitors the nightly warehouse load jobs."
+    value: "The one place that knows the full dependency order of the data pipeline."
+    last_commit: "2026-06-10"
+    tech: [langgraph, postgresql, dbt]
+    internal_systems: [atlas, forge]
+
+  - path: data-eng/warehouse-sync
+    team: data-eng
+    domain: "Data Platform / Architecture"
+    name: "Warehouse Sync"
+    description: "Keeps the analytics warehouse in sync with production tables."
+    value: "dbt models plus a Snowflake loader most dashboards depend on."
+    last_commit: "2026-04-18"
+    tech: [postgresql, dbt, snowflake]
+    internal_systems: [atlas]
+
+  - path: data-eng/feature-store
+    team: data-eng
+    domain: "Data Platform / Architecture"
+    name: "Feature Store"
+    description: "Serves precomputed features to the ranking and recommendation models."
+    value: "Low-latency feature lookups backed by Redis with a Postgres system of record."
+    last_commit: "2026-06-15"
+    tech: [postgresql, redis, fastapi]
+    internal_systems: [atlas]
+
+  - path: search/query-planner
+    team: search
+    domain: "Platform / Gateway / Framework"
+    name: "Query Planner"
+    description: "Rewrites and dispatches search queries across shards."
+    value: "The routing layer every search request goes through before hitting Elasticsearch."
+    last_commit: "2026-05-30"
+    tech: [fastapi, elasticsearch, redis]
+    internal_systems: [atlas]
+
+  - path: search/relevance-agent
+    team: search
+    domain: "Customer-Facing Agents"
+    name: "Relevance Agent"
+    description: "Uses an LLM to re-rank search results for ambiguous queries."
+    value: "Handles the long tail of queries the classic ranking model scores poorly."
+    last_commit: "2026-06-20"
+    tech: [langgraph, elasticsearch, anthropic]
+    internal_systems: [atlas]
+
+  - path: growth/experiment-service
+    team: growth
+    domain: "Tools / Skills / Evaluation"
+    name: "Experiment Service"
+    description: "Assigns users to experiment arms and records outcomes."
+    value: "System of record for every running A/B test."
+    last_commit: "2026-06-05"
+    tech: [fastapi, postgresql, mlflow]
+    internal_systems: [atlas]
+
+  - path: ml-research/eval-harness
+    team: ml-research
+    domain: "Tools / Skills / Evaluation"
+    name: "Eval Harness"
+    description: "Runs regression evals against every agent before a release."
+    value: "Catches quality regressions before they reach production."
+    last_commit: "2026-06-22"
+    tech: [pytest, mlflow, langfuse]
+    internal_systems: [forge]
+
+  - path: ml-research/prompt-lab
+    team: ml-research
+    domain: "Tools / Skills / Evaluation"
+    name: "Prompt Lab"
+    description: "Internal playground for iterating on prompts across providers."
+    value: "Side-by-side comparison UI for Anthropic and OpenAI responses."
+    last_commit: "2026-06-01"
+    tech: [streamlit, anthropic, openai]
+    internal_systems: [beacon]
+
+  - path: billing/invoice-agent
+    team: billing
+    domain: "Customer-Facing Agents"
+    name: "Invoice Agent"
+    description: "Answers customer questions about their invoices."
+    value: "Deflects a large share of billing support tickets."
+    last_commit: "2026-06-12"
+    tech: [langgraph, fastapi, postgresql]
+    internal_systems: [atlas]
+
+  - path: billing/dunning-service
+    team: billing
+    domain: "Internal Productivity"
+    name: "Dunning Service"
+    description: "Schedules and sends payment-reminder notifications."
+    value: "Runs the retry schedule for failed payments."
+    last_commit: "2025-11-08"
+    tech: [fastapi, postgresql, apscheduler]
+    internal_systems: [atlas]
+
+  - path: security/access-review-bot
+    team: security
+    domain: "Internal Productivity"
+    name: "Access Review Bot"
+    description: "Reminds team leads to review who still has access to sensitive systems."
+    value: "Turns a manual quarterly audit into an automated nudge."
+    last_commit: "2026-05-14"
+    tech: [langgraph, fastapi, oauth2]
+    internal_systems: [beacon]
+
+  - path: security/secret-scanner
+    team: security
+    domain: "IT Ops / Infrastructure"
+    name: "Secret Scanner"
+    description: "Scans commits for accidentally committed credentials."
+    value: "Runs as a required CI check on every repository."
+    last_commit: "2026-06-18"
+    tech: [typer, github-actions]
+    internal_systems: [forge]
+
+  - path: mobile/support-agent
+    team: mobile
+    domain: "Customer-Facing Agents"
+    name: "Support Agent"
+    description: "In-app assistant that answers common mobile app questions."
+    value: "First point of contact before a ticket reaches a human agent."
+    last_commit: "2026-06-08"
+    tech: [langgraph, fastapi, mongodb]
+    internal_systems: [atlas]
+
+  - path: growth/support-agent
+    team: growth
+    domain: "Customer-Facing Agents"
+    name: "Support Agent"
+    description: "Copied from the mobile team's in-app assistant to answer web app questions."
+    value: "Same assistant as mobile's, retargeted at the web app FAQ."
+    last_commit: "2026-03-02"
+    tech: [langgraph, fastapi, mongodb]
+    internal_systems: [atlas]
+
+  - path: sre/incident-copilot
+    team: sre
+    domain: "IT Ops / Infrastructure"
+    name: "Incident Copilot"
+    description: "Summarises alerts and suggests a first response during an incident."
+    value: "Cuts the time to first meaningful action during an on-call page."
+    last_commit: "2026-06-25"
+    tech: [langgraph, grafana, opentelemetry]
+    internal_systems: [atlas, forge]
+
+  - path: sre/runbook-agent
+    team: sre
+    domain: "IT Ops / Infrastructure"
+    name: "Runbook Agent"
+    description: "Walks an on-call engineer through a known runbook step by step."
+    value: "Encodes tribal knowledge that used to live only in a wiki."
+    last_commit: "2026-05-27"
+    tech: [langgraph, fastapi, mlflow]
+    internal_systems: [atlas]
+
+  - path: api-gateway/edge-router
+    team: api-gateway
+    domain: "Platform / Gateway / Framework"
+    name: "Edge Router"
+    description: "Terminates TLS and routes external traffic to internal services."
+    value: "The single entry point for all external API traffic."
+    last_commit: "2026-06-19"
+    tech: [fastapi, kubernetes, docker]
+    internal_systems: [atlas]
+
+  - path: api-gateway/legacy-router
+    team: api-gateway
+    domain: "Platform / Gateway / Framework"
+    name: "Legacy Router"
+    description: "Predecessor to the edge router, kept running for one remaining internal client."
+    value: "Nothing — candidate for retirement once the last client migrates."
+    last_commit: "2025-02-11"
+    tech: [flask, docker]
+    internal_systems: []
+
+  - path: platform/internal-cli
+    team: platform
+    domain: "Tools / Skills / Evaluation"
+    name: "Internal CLI"
+    description: "Command-line tool that wraps common platform operations."
+    value: "Reduces a dozen manual steps to one command for common tasks."
+    last_commit: "2026-06-14"
+    tech: [typer, uv]
+    internal_systems: []
+
+  - path: platform/docs-bot
+    team: platform
+    domain: "Internal Productivity"
+    name: "Docs Bot"
+    description: "Answers engineering questions by searching internal documentation."
+    value: "Cuts down on repeated questions in the platform support channel."
+    last_commit: "2026-06-11"
+    tech: [langgraph, fastapi, chromadb]
+    internal_systems: [beacon]
+
+  - path: growth/onboarding-agent
+    team: growth
+    domain: "Customer-Facing Agents"
+    name: "Onboarding Agent"
+    description: "Walks new users through initial account setup."
+    value: "Reduced drop-off during the first-run experience."
+    last_commit: "2026-06-17"
+    tech: [langgraph, fastapi, postgresql]
+    internal_systems: [atlas]
+
+  - path: security/compliance-agent
+    team: security
+    domain: "Internal Productivity"
+    name: "Compliance Agent"
+    description: "Answers employee questions about internal policy."
+    value: "Deflects routine policy questions from the security team's inbox."
+    last_commit: "2026-04-30"
+    tech: [langgraph, fastapi, mongodb]
+    internal_systems: [beacon]
+
+  - path: ml-research/agent-benchmarks
+    team: ml-research
+    domain: "Tools / Skills / Evaluation"
+    name: "Agent Benchmarks"
+    description: "Tracks agent quality metrics release over release."
+    value: "The dashboard the eval harness's results feed into."
+    last_commit: "2026-06-23"
+    tech: [pytest, langfuse]
+    internal_systems: [forge]

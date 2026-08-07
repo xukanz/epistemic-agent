@@ -1,0 +1,1501 @@
+{
+  "generated_at": "2026-08-07T11:31:46",
+  "total_nodes": 71,
+  "total_edges": 149,
+  "node_counts": {
+    "Domain": 6,
+    "InternalSystem": 3,
+    "Repo": 25,
+    "Team": 10,
+    "TechStack": 27
+  },
+  "edge_counts": {
+    "DEPENDS_ON_INTERNAL": 25,
+    "IN_DOMAIN": 25,
+    "OWNED_BY": 25,
+    "USES_TECH": 74
+  },
+  "ungrounded_nodes": {
+    "TechStack": [
+      "tech-dbt"
+    ]
+  },
+  "grounding_candidates": [
+    {
+      "id": "tech-dbt",
+      "type": "TechStack",
+      "label": "dbt",
+      "score": 0.5,
+      "candidates": [
+        {
+          "term_id": "dd:rdkit",
+          "label": "RDKit",
+          "ontology_id": "document-data",
+          "score": 0.5,
+          "parent": null,
+          "matched_on": "fuzzy"
+        },
+        {
+          "term_id": "id:boto3",
+          "label": "boto3",
+          "ontology_id": "infra-deploy",
+          "score": 0.5,
+          "parent": null,
+          "matched_on": "fuzzy"
+        },
+        {
+          "term_id": "oe:weave",
+          "label": "W&B Weave",
+          "ontology_id": "observability-eval",
+          "score": 0.5,
+          "parent": null,
+          "matched_on": "fuzzy"
+        }
+      ]
+    }
+  ],
+  "fuzzy_duplicate_pairs": [],
+  "schema_gap_clusters": [],
+  "orphan_nodes": [],
+  "stale_nodes": [
+    "repo-api-gateway--legacy-router"
+  ],
+  "deprecated_nodes": [],
+  "bus_factor_one": [
+    {
+      "id": "tech-docker",
+      "label": "Docker",
+      "sole_team": "team-api-gateway",
+      "repo_count": 2,
+      "repos": [
+        "repo-api-gateway--edge-router",
+        "repo-api-gateway--legacy-router"
+      ]
+    },
+    {
+      "id": "tech-dbt",
+      "label": "dbt",
+      "sole_team": "team-data-eng",
+      "repo_count": 2,
+      "repos": [
+        "repo-data-eng--etl-orchestrator",
+        "repo-data-eng--warehouse-sync"
+      ]
+    },
+    {
+      "id": "tech-langfuse",
+      "label": "Langfuse",
+      "sole_team": "team-ml-research",
+      "repo_count": 2,
+      "repos": [
+        "repo-ml-research--agent-benchmarks",
+        "repo-ml-research--eval-harness"
+      ]
+    },
+    {
+      "id": "tech-pytest",
+      "label": "pytest",
+      "sole_team": "team-ml-research",
+      "repo_count": 2,
+      "repos": [
+        "repo-ml-research--agent-benchmarks",
+        "repo-ml-research--eval-harness"
+      ]
+    },
+    {
+      "id": "tech-elasticsearch",
+      "label": "Elasticsearch",
+      "sole_team": "team-search",
+      "repo_count": 2,
+      "repos": [
+        "repo-search--query-planner",
+        "repo-search--relevance-agent"
+      ]
+    },
+    {
+      "id": "tech-kubernetes",
+      "label": "Kubernetes",
+      "sole_team": "team-api-gateway",
+      "repo_count": 1,
+      "repos": [
+        "repo-api-gateway--edge-router"
+      ]
+    },
+    {
+      "id": "tech-flask",
+      "label": "Flask",
+      "sole_team": "team-api-gateway",
+      "repo_count": 1,
+      "repos": [
+        "repo-api-gateway--legacy-router"
+      ]
+    },
+    {
+      "id": "tech-apscheduler",
+      "label": "任务调度",
+      "sole_team": "team-billing",
+      "repo_count": 1,
+      "repos": [
+        "repo-billing--dunning-service"
+      ]
+    },
+    {
+      "id": "tech-snowflake",
+      "label": "Snowflake",
+      "sole_team": "team-data-eng",
+      "repo_count": 1,
+      "repos": [
+        "repo-data-eng--warehouse-sync"
+      ]
+    },
+    {
+      "id": "tech-qdrant",
+      "label": "Qdrant",
+      "sole_team": "team-growth",
+      "repo_count": 1,
+      "repos": [
+        "repo-growth--model-router"
+      ]
+    },
+    {
+      "id": "tech-openai",
+      "label": "OpenAI",
+      "sole_team": "team-ml-research",
+      "repo_count": 1,
+      "repos": [
+        "repo-ml-research--prompt-lab"
+      ]
+    },
+    {
+      "id": "tech-streamlit",
+      "label": "Streamlit",
+      "sole_team": "team-ml-research",
+      "repo_count": 1,
+      "repos": [
+        "repo-ml-research--prompt-lab"
+      ]
+    },
+    {
+      "id": "tech-chromadb",
+      "label": "ChromaDB",
+      "sole_team": "team-platform",
+      "repo_count": 1,
+      "repos": [
+        "repo-platform--docs-bot"
+      ]
+    },
+    {
+      "id": "tech-uv",
+      "label": "uv",
+      "sole_team": "team-platform",
+      "repo_count": 1,
+      "repos": [
+        "repo-platform--internal-cli"
+      ]
+    },
+    {
+      "id": "tech-oauth2",
+      "label": "OAuth2 / OIDC",
+      "sole_team": "team-security",
+      "repo_count": 1,
+      "repos": [
+        "repo-security--access-review-bot"
+      ]
+    },
+    {
+      "id": "tech-github-actions",
+      "label": "GitHub Actions",
+      "sole_team": "team-security",
+      "repo_count": 1,
+      "repos": [
+        "repo-security--secret-scanner"
+      ]
+    },
+    {
+      "id": "tech-grafana",
+      "label": "Grafana 栈",
+      "sole_team": "team-sre",
+      "repo_count": 1,
+      "repos": [
+        "repo-sre--incident-copilot"
+      ]
+    },
+    {
+      "id": "tech-opentelemetry",
+      "label": "OpenTelemetry",
+      "sole_team": "team-sre",
+      "repo_count": 1,
+      "repos": [
+        "repo-sre--incident-copilot"
+      ]
+    }
+  ],
+  "duplicate_clusters": [
+    {
+      "domain": "domain-customer-facing-agents",
+      "repos": [
+        "repo-billing--invoice-agent",
+        "repo-growth--onboarding-agent"
+      ],
+      "repo_labels": [
+        "Invoice Agent",
+        "Onboarding Agent"
+      ],
+      "teams": [
+        "team-billing",
+        "team-growth"
+      ],
+      "shared_tech": [
+        "tech-fastapi",
+        "tech-langgraph",
+        "tech-postgresql"
+      ],
+      "jaccard": 1.0
+    },
+    {
+      "domain": "domain-customer-facing-agents",
+      "repos": [
+        "repo-growth--support-agent",
+        "repo-mobile--support-agent"
+      ],
+      "repo_labels": [
+        "Support Agent",
+        "Support Agent"
+      ],
+      "teams": [
+        "team-growth",
+        "team-mobile"
+      ],
+      "shared_tech": [
+        "tech-fastapi",
+        "tech-langgraph",
+        "tech-mongodb"
+      ],
+      "jaccard": 1.0
+    },
+    {
+      "domain": "domain-platform-gateway-framework",
+      "repos": [
+        "repo-growth--model-router",
+        "repo-platform--agent-gateway"
+      ],
+      "repo_labels": [
+        "Model Router",
+        "Agent Gateway"
+      ],
+      "teams": [
+        "team-growth",
+        "team-platform"
+      ],
+      "shared_tech": [
+        "tech-fastapi",
+        "tech-langgraph",
+        "tech-portkey",
+        "tech-redis"
+      ],
+      "jaccard": 0.8
+    }
+  ],
+  "uncovered_vocabulary": [
+    {
+      "term_id": "af:agentkit",
+      "label": "OpenAI AgentKit",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:agno",
+      "label": "Agno",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:autogen",
+      "label": "AutoGen",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:claude-agent-sdk",
+      "label": "Claude Agent SDK",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:copilotkit",
+      "label": "CopilotKit",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:crewai",
+      "label": "CrewAI",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:deepagents",
+      "label": "DeepAgents",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:dspy",
+      "label": "DSPy",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:google-adk",
+      "label": "Google ADK",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:kagent",
+      "label": "kagent",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:langchain",
+      "label": "LangChain",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:langgraph-supervisor",
+      "label": "LangGraph Supervisor",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:langgraph-swarm",
+      "label": "LangGraph Swarm",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:langmem",
+      "label": "LangMem",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:llamaindex",
+      "label": "LlamaIndex",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:openai-agents",
+      "label": "OpenAI Agents SDK",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:paper-qa",
+      "label": "PaperQA",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:pydantic-ai",
+      "label": "Pydantic AI",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:semantic-kernel",
+      "label": "Semantic Kernel",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "af:strands",
+      "label": "AWS Strands Agents",
+      "shard": "agent-framework",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ap:adversarial-review",
+      "label": "对抗式多模型评审",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:artifact-handoff",
+      "label": "文件工件交接",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:checkpointing",
+      "label": "会话持久化 / 断点续跑",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:citation-grounding",
+      "label": "引用溯源",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:dry-run",
+      "label": "dry-run 预演",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:eval-harness",
+      "label": "评测流水线",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:fan-out",
+      "label": "专家 Agent 并行 fan-out",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:graph-rag",
+      "label": "结构化知识检索",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:human-in-the-loop",
+      "label": "人工接管 / HITL 门禁",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:incremental-sync",
+      "label": "增量同步与幂等摄取",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:nl2sql",
+      "label": "自然语言转查询",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:plugin-distribution",
+      "label": "插件化分发",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:progressive-disclosure",
+      "label": "分级处理 / 优雅降级",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:provider-switch",
+      "label": "多提供商可切换",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:rag",
+      "label": "RAG 检索增强",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:react-loop",
+      "label": "ReAct 工具循环",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:sandbox-exec",
+      "label": "沙箱执行生成代码",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:spec-driven",
+      "label": "规格驱动开发",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:structured-output",
+      "label": "Schema 约束结构化输出",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "ap:supervisor-routing",
+      "label": "Supervisor 路由",
+      "shard": "agent-pattern",
+      "target_type": "Pattern"
+    },
+    {
+      "term_id": "dt:agents-md",
+      "label": "AGENTS.md 约定",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:aider",
+      "label": "Aider",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:claude-code",
+      "label": "Claude Code",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:claude-plugin",
+      "label": "Claude Code Plugin / Marketplace",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:claude-skills",
+      "label": "Claude Code Skills",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:codex",
+      "label": "OpenAI Codex CLI",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:conda",
+      "label": "conda",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:cookiecutter",
+      "label": "Cookiecutter / Copier",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:cursor",
+      "label": "Cursor",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:git-submodule",
+      "label": "Git submodule",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:github-copilot",
+      "label": "GitHub Copilot",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:maven",
+      "label": "Maven / Gradle",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:npm",
+      "label": "Node / npm",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:poetry",
+      "label": "Poetry",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:pydantic",
+      "label": "Pydantic",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:renv",
+      "label": "renv",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:ruff",
+      "label": "Ruff",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:tmux",
+      "label": "tmux",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dt:vscode",
+      "label": "VS Code",
+      "shard": "dev-agent-tooling",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:beautifulsoup",
+      "label": "HTML 解析",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:biopython",
+      "label": "Biopython",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:genomics-tools",
+      "label": "基因组学工具链",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:httpx",
+      "label": "HTTP 客户端",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:jupyter",
+      "label": "Jupyter",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:optuna",
+      "label": "Optuna",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:pandoc",
+      "label": "Pandoc / Quarto",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:pdfplumber",
+      "label": "pdfplumber",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:pymc",
+      "label": "贝叶斯统计",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:pymupdf",
+      "label": "PyMuPDF",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:python-docx",
+      "label": "python-docx / python-pptx",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:rapidfuzz",
+      "label": "rapidfuzz",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:rdkit",
+      "label": "RDKit",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:reportlab",
+      "label": "PDF 生成",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:scikit-learn",
+      "label": "scikit-learn",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:spacy",
+      "label": "spaCy",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:tenacity",
+      "label": "重试与退避",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "dd:workflow-engine",
+      "label": "科学工作流引擎",
+      "shard": "document-data",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:angular",
+      "label": "Angular",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:charts",
+      "label": "图表库",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:chrome-ext",
+      "label": "Chrome 扩展",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:mui",
+      "label": "MUI",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:nextjs",
+      "label": "Next.js",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:puppeteer",
+      "label": "Puppeteer / 无头浏览器",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:react",
+      "label": "React",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:search-ui",
+      "label": "前端搜索",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:state-mgmt",
+      "label": "前端状态管理",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:svelte",
+      "label": "Svelte / SvelteKit",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:tailwind",
+      "label": "Tailwind CSS",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:typescript",
+      "label": "TypeScript",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:vite",
+      "label": "Vite",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "fe:vue",
+      "label": "Vue",
+      "shard": "frontend",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:app-engine",
+      "label": "GCP App Engine",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:argocd",
+      "label": "ArgoCD",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:aws-artifact-registry",
+      "label": "制品仓库（ECR / CodeArtifact）",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:aws-audit",
+      "label": "CloudTrail / SSM Automation",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:aws-cdk",
+      "label": "AWS CDK",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:aws-cdn",
+      "label": "CloudFront",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:aws-ecs",
+      "label": "AWS ECS",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:aws-lambda",
+      "label": "AWS Lambda",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:aws-messaging",
+      "label": "SNS / SQS",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:aws-secrets",
+      "label": "AWS Secrets / Parameter Store",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:boto3",
+      "label": "boto3",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:devcontainer",
+      "label": "Devcontainer",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:gitlab-ci",
+      "label": "GitLab CI",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:helm",
+      "label": "Helm",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:kustomize",
+      "label": "Kustomize",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:pre-commit",
+      "label": "pre-commit",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:renovate",
+      "label": "Renovate",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:sagemaker",
+      "label": "AWS SageMaker",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:slurm",
+      "label": "Slurm / HPC",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:terraform",
+      "label": "Terraform",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "id:testcontainers",
+      "label": "Testcontainers",
+      "shard": "infra-deploy",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:azure-openai",
+      "label": "Azure OpenAI",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:bedrock",
+      "label": "AWS Bedrock",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:bedrock-agentcore",
+      "label": "Bedrock AgentCore",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:bedrock-kb",
+      "label": "Bedrock Knowledge Base",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:google-genai",
+      "label": "Google Gemini / GenAI",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:huggingface",
+      "label": "HuggingFace",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:litellm",
+      "label": "LiteLLM",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:ollama",
+      "label": "Ollama",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:openrouter",
+      "label": "OpenRouter",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:sglang",
+      "label": "SGLang",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:torch",
+      "label": "PyTorch",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "llm:vllm",
+      "label": "vLLM",
+      "shard": "llm-provider",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "oe:cypress",
+      "label": "Cypress",
+      "shard": "observability-eval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "oe:datadog",
+      "label": "Datadog",
+      "shard": "observability-eval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "oe:langsmith",
+      "label": "LangSmith",
+      "shard": "observability-eval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "oe:promptfoo",
+      "label": "promptfoo",
+      "shard": "observability-eval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "oe:ragas",
+      "label": "RAGAS",
+      "shard": "observability-eval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "oe:sonar",
+      "label": "SonarQube",
+      "shard": "observability-eval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "oe:splunk",
+      "label": "Splunk",
+      "shard": "observability-eval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "oe:weave",
+      "label": "W&B Weave",
+      "shard": "observability-eval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "pi:a2a",
+      "label": "A2A (Agent-to-Agent)",
+      "shard": "protocol-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "pi:acp",
+      "label": "ACP (Agent Communication Protocol)",
+      "shard": "protocol-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "pi:fastmcp",
+      "label": "FastMCP",
+      "shard": "protocol-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "pi:graphql",
+      "label": "GraphQL",
+      "shard": "protocol-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "pi:mcp",
+      "label": "MCP (Model Context Protocol)",
+      "shard": "protocol-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "pi:mcp-server",
+      "label": "MCP Server 实现",
+      "shard": "protocol-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "pi:rest-api",
+      "label": "REST API",
+      "shard": "protocol-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "pi:sse",
+      "label": "SSE / 流式传输",
+      "shard": "protocol-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "pi:streamable-http",
+      "label": "Streamable HTTP",
+      "shard": "protocol-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "pi:websocket",
+      "label": "WebSocket",
+      "shard": "protocol-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:airtable",
+      "label": "Airtable",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:apps-script",
+      "label": "Google Apps Script",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:arvados",
+      "label": "Arvados",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:atlassian",
+      "label": "Jira / Confluence",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:autoit",
+      "label": "AutoIt",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:benchling",
+      "label": "Benchling",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:camunda",
+      "label": "Camunda / BPMN",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:dataiku",
+      "label": "Dataiku",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:dialogflow",
+      "label": "Dialogflow",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:google-workspace",
+      "label": "Google Workspace",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:kubeflow",
+      "label": "Kubeflow",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:mirth",
+      "label": "Mirth Connect",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:monday",
+      "label": "Monday.com",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:palantir",
+      "label": "Palantir Foundry",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:posit",
+      "label": "Posit Connect",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:sap",
+      "label": "SAP CAP",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:servicenow",
+      "label": "ServiceNow",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "si:slack",
+      "label": "Slack",
+      "shard": "saas-integration",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:azure-ai-search",
+      "label": "Azure AI Search",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:documentdb",
+      "label": "AWS DocumentDB",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:duckdb",
+      "label": "DuckDB",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:dynamodb",
+      "label": "DynamoDB",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:faiss",
+      "label": "FAISS",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:liquibase",
+      "label": "Liquibase",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:milvus",
+      "label": "Milvus",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:neo4j",
+      "label": "Neo4j",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:opensearch",
+      "label": "OpenSearch",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:oracle",
+      "label": "Oracle",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:pandas",
+      "label": "pandas",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:pgvector",
+      "label": "pgvector",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:polars",
+      "label": "Polars",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:pyarrow",
+      "label": "PyArrow",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:rabbitmq",
+      "label": "RabbitMQ",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:redshift",
+      "label": "Redshift",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:s3",
+      "label": "AWS S3",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "sr:sqlite",
+      "label": "SQLite",
+      "shard": "storage-retrieval",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:chainlit",
+      "label": "Chainlit",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:dash",
+      "label": "Dash",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:django",
+      "label": "Django",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:express",
+      "label": "Express",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:gradio",
+      "label": "Gradio",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:gunicorn",
+      "label": "Gunicorn",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:mangum",
+      "label": "Mangum",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:nginx",
+      "label": "Nginx",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:nicegui",
+      "label": "NiceGUI",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:open-webui",
+      "label": "Open WebUI",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:plumber",
+      "label": "R Plumber",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:shiny",
+      "label": "R Shiny",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:spring-boot",
+      "label": "Spring Boot",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:tkinter",
+      "label": "Tkinter",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    },
+    {
+      "term_id": "ws:uvicorn",
+      "label": "Uvicorn",
+      "shard": "web-service",
+      "target_type": "TechStack"
+    }
+  ],
+  "internal_lockin": [
+    {
+      "id": "sys-atlas",
+      "label": "Atlas",
+      "dependent_repos": 16,
+      "repos": [
+        "repo-api-gateway--edge-router",
+        "repo-billing--dunning-service",
+        "repo-billing--invoice-agent",
+        "repo-data-eng--etl-orchestrator",
+        "repo-data-eng--feature-store",
+        "repo-data-eng--warehouse-sync",
+        "repo-growth--experiment-service",
+        "repo-growth--model-router",
+        "repo-growth--onboarding-agent",
+        "repo-growth--support-agent"
+      ]
+    },
+    {
+      "id": "sys-forge",
+      "label": "Forge",
+      "dependent_repos": 5,
+      "repos": [
+        "repo-data-eng--etl-orchestrator",
+        "repo-ml-research--agent-benchmarks",
+        "repo-ml-research--eval-harness",
+        "repo-security--secret-scanner",
+        "repo-sre--incident-copilot"
+      ]
+    },
+    {
+      "id": "sys-beacon",
+      "label": "Beacon",
+      "dependent_repos": 4,
+      "repos": [
+        "repo-ml-research--prompt-lab",
+        "repo-platform--docs-bot",
+        "repo-security--access-review-bot",
+        "repo-security--compliance-agent"
+      ]
+    }
+  ]
+}

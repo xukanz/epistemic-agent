@@ -1,0 +1,2328 @@
+{
+  "nodes": [
+    {
+      "id": "domain-customer-facing-agents",
+      "type": "Domain",
+      "properties": {
+        "label": "Customer-Facing Agents",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "domain-data-platform-architecture",
+      "type": "Domain",
+      "properties": {
+        "label": "Data Platform / Architecture",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "domain-internal-productivity",
+      "type": "Domain",
+      "properties": {
+        "label": "Internal Productivity",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "domain-it-ops-infrastructure",
+      "type": "Domain",
+      "properties": {
+        "label": "IT Ops / Infrastructure",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "domain-platform-gateway-framework",
+      "type": "Domain",
+      "properties": {
+        "label": "Platform / Gateway / Framework",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "domain-tools-skills-evaluation",
+      "type": "Domain",
+      "properties": {
+        "label": "Tools / Skills / Evaluation",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "sys-atlas",
+      "type": "InternalSystem",
+      "properties": {
+        "label": "Atlas",
+        "kind": "platform",
+        "term_id": "is:atlas",
+        "ontology_id": "internal-system",
+        "_grounding_score": 1.0,
+        "raw_label": "Atlas",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "sys-beacon",
+      "type": "InternalSystem",
+      "properties": {
+        "label": "Beacon",
+        "kind": "platform",
+        "term_id": "is:beacon",
+        "ontology_id": "internal-system",
+        "_grounding_score": 1.0,
+        "raw_label": "Beacon",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "sys-forge",
+      "type": "InternalSystem",
+      "properties": {
+        "label": "Forge",
+        "kind": "platform",
+        "term_id": "is:forge",
+        "ontology_id": "internal-system",
+        "_grounding_score": 1.0,
+        "raw_label": "Forge",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-api-gateway--edge-router",
+      "type": "Repo",
+      "properties": {
+        "name": "Edge Router",
+        "path": "api-gateway/edge-router",
+        "url": "https://git.acme.example/api-gateway/edge-router",
+        "description": "Terminates TLS and routes external traffic to internal services.",
+        "value": "The single entry point for all external API traffic.",
+        "last_commit": "2026-06-19",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-api-gateway--legacy-router",
+      "type": "Repo",
+      "properties": {
+        "name": "Legacy Router",
+        "path": "api-gateway/legacy-router",
+        "url": "https://git.acme.example/api-gateway/legacy-router",
+        "description": "Predecessor to the edge router, kept running for one remaining internal client.",
+        "value": "Nothing — candidate for retirement once the last client migrates.",
+        "last_commit": "2025-02-11",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-billing--dunning-service",
+      "type": "Repo",
+      "properties": {
+        "name": "Dunning Service",
+        "path": "billing/dunning-service",
+        "url": "https://git.acme.example/billing/dunning-service",
+        "description": "Schedules and sends payment-reminder notifications.",
+        "value": "Runs the retry schedule for failed payments.",
+        "last_commit": "2025-11-08",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-billing--invoice-agent",
+      "type": "Repo",
+      "properties": {
+        "name": "Invoice Agent",
+        "path": "billing/invoice-agent",
+        "url": "https://git.acme.example/billing/invoice-agent",
+        "description": "Answers customer questions about their invoices.",
+        "value": "Deflects a large share of billing support tickets.",
+        "last_commit": "2026-06-12",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-data-eng--etl-orchestrator",
+      "type": "Repo",
+      "properties": {
+        "name": "ETL Orchestrator",
+        "path": "data-eng/etl-orchestrator",
+        "url": "https://git.acme.example/data-eng/etl-orchestrator",
+        "description": "Schedules and monitors the nightly warehouse load jobs.",
+        "value": "The one place that knows the full dependency order of the data pipeline.",
+        "last_commit": "2026-06-10",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-data-eng--feature-store",
+      "type": "Repo",
+      "properties": {
+        "name": "Feature Store",
+        "path": "data-eng/feature-store",
+        "url": "https://git.acme.example/data-eng/feature-store",
+        "description": "Serves precomputed features to the ranking and recommendation models.",
+        "value": "Low-latency feature lookups backed by Redis with a Postgres system of record.",
+        "last_commit": "2026-06-15",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-data-eng--warehouse-sync",
+      "type": "Repo",
+      "properties": {
+        "name": "Warehouse Sync",
+        "path": "data-eng/warehouse-sync",
+        "url": "https://git.acme.example/data-eng/warehouse-sync",
+        "description": "Keeps the analytics warehouse in sync with production tables.",
+        "value": "dbt models plus a Snowflake loader most dashboards depend on.",
+        "last_commit": "2026-04-18",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-growth--experiment-service",
+      "type": "Repo",
+      "properties": {
+        "name": "Experiment Service",
+        "path": "growth/experiment-service",
+        "url": "https://git.acme.example/growth/experiment-service",
+        "description": "Assigns users to experiment arms and records outcomes.",
+        "value": "System of record for every running A/B test.",
+        "last_commit": "2026-06-05",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-growth--model-router",
+      "type": "Repo",
+      "properties": {
+        "name": "Model Router",
+        "path": "growth/model-router",
+        "url": "https://git.acme.example/growth/model-router",
+        "description": "Growth team's own request router in front of Portkey, built independently of the platform team's gateway.",
+        "value": "Adds per-experiment routing rules on top of the shared model gateway.",
+        "last_commit": "2026-05-20",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-growth--onboarding-agent",
+      "type": "Repo",
+      "properties": {
+        "name": "Onboarding Agent",
+        "path": "growth/onboarding-agent",
+        "url": "https://git.acme.example/growth/onboarding-agent",
+        "description": "Walks new users through initial account setup.",
+        "value": "Reduced drop-off during the first-run experience.",
+        "last_commit": "2026-06-17",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-growth--support-agent",
+      "type": "Repo",
+      "properties": {
+        "name": "Support Agent",
+        "path": "growth/support-agent",
+        "url": "https://git.acme.example/growth/support-agent",
+        "description": "Copied from the mobile team's in-app assistant to answer web app questions.",
+        "value": "Same assistant as mobile's, retargeted at the web app FAQ.",
+        "last_commit": "2026-03-02",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-ml-research--agent-benchmarks",
+      "type": "Repo",
+      "properties": {
+        "name": "Agent Benchmarks",
+        "path": "ml-research/agent-benchmarks",
+        "url": "https://git.acme.example/ml-research/agent-benchmarks",
+        "description": "Tracks agent quality metrics release over release.",
+        "value": "The dashboard the eval harness's results feed into.",
+        "last_commit": "2026-06-23",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-ml-research--eval-harness",
+      "type": "Repo",
+      "properties": {
+        "name": "Eval Harness",
+        "path": "ml-research/eval-harness",
+        "url": "https://git.acme.example/ml-research/eval-harness",
+        "description": "Runs regression evals against every agent before a release.",
+        "value": "Catches quality regressions before they reach production.",
+        "last_commit": "2026-06-22",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-ml-research--prompt-lab",
+      "type": "Repo",
+      "properties": {
+        "name": "Prompt Lab",
+        "path": "ml-research/prompt-lab",
+        "url": "https://git.acme.example/ml-research/prompt-lab",
+        "description": "Internal playground for iterating on prompts across providers.",
+        "value": "Side-by-side comparison UI for Anthropic and OpenAI responses.",
+        "last_commit": "2026-06-01",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-mobile--support-agent",
+      "type": "Repo",
+      "properties": {
+        "name": "Support Agent",
+        "path": "mobile/support-agent",
+        "url": "https://git.acme.example/mobile/support-agent",
+        "description": "In-app assistant that answers common mobile app questions.",
+        "value": "First point of contact before a ticket reaches a human agent.",
+        "last_commit": "2026-06-08",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-platform--agent-gateway",
+      "type": "Repo",
+      "properties": {
+        "name": "Agent Gateway",
+        "path": "platform/agent-gateway",
+        "url": "https://git.acme.example/platform/agent-gateway",
+        "description": "Routes model calls through Portkey with per-team rate limits and request logging.",
+        "value": "Central place every other team's agent traffic passes through before it reaches a model provider.",
+        "last_commit": "2026-06-02",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-platform--docs-bot",
+      "type": "Repo",
+      "properties": {
+        "name": "Docs Bot",
+        "path": "platform/docs-bot",
+        "url": "https://git.acme.example/platform/docs-bot",
+        "description": "Answers engineering questions by searching internal documentation.",
+        "value": "Cuts down on repeated questions in the platform support channel.",
+        "last_commit": "2026-06-11",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-platform--internal-cli",
+      "type": "Repo",
+      "properties": {
+        "name": "Internal CLI",
+        "path": "platform/internal-cli",
+        "url": "https://git.acme.example/platform/internal-cli",
+        "description": "Command-line tool that wraps common platform operations.",
+        "value": "Reduces a dozen manual steps to one command for common tasks.",
+        "last_commit": "2026-06-14",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-search--query-planner",
+      "type": "Repo",
+      "properties": {
+        "name": "Query Planner",
+        "path": "search/query-planner",
+        "url": "https://git.acme.example/search/query-planner",
+        "description": "Rewrites and dispatches search queries across shards.",
+        "value": "The routing layer every search request goes through before hitting Elasticsearch.",
+        "last_commit": "2026-05-30",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-search--relevance-agent",
+      "type": "Repo",
+      "properties": {
+        "name": "Relevance Agent",
+        "path": "search/relevance-agent",
+        "url": "https://git.acme.example/search/relevance-agent",
+        "description": "Uses an LLM to re-rank search results for ambiguous queries.",
+        "value": "Handles the long tail of queries the classic ranking model scores poorly.",
+        "last_commit": "2026-06-20",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-security--access-review-bot",
+      "type": "Repo",
+      "properties": {
+        "name": "Access Review Bot",
+        "path": "security/access-review-bot",
+        "url": "https://git.acme.example/security/access-review-bot",
+        "description": "Reminds team leads to review who still has access to sensitive systems.",
+        "value": "Turns a manual quarterly audit into an automated nudge.",
+        "last_commit": "2026-05-14",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-security--compliance-agent",
+      "type": "Repo",
+      "properties": {
+        "name": "Compliance Agent",
+        "path": "security/compliance-agent",
+        "url": "https://git.acme.example/security/compliance-agent",
+        "description": "Answers employee questions about internal policy.",
+        "value": "Deflects routine policy questions from the security team's inbox.",
+        "last_commit": "2026-04-30",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-security--secret-scanner",
+      "type": "Repo",
+      "properties": {
+        "name": "Secret Scanner",
+        "path": "security/secret-scanner",
+        "url": "https://git.acme.example/security/secret-scanner",
+        "description": "Scans commits for accidentally committed credentials.",
+        "value": "Runs as a required CI check on every repository.",
+        "last_commit": "2026-06-18",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-sre--incident-copilot",
+      "type": "Repo",
+      "properties": {
+        "name": "Incident Copilot",
+        "path": "sre/incident-copilot",
+        "url": "https://git.acme.example/sre/incident-copilot",
+        "description": "Summarises alerts and suggests a first response during an incident.",
+        "value": "Cuts the time to first meaningful action during an on-call page.",
+        "last_commit": "2026-06-25",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "repo-sre--runbook-agent",
+      "type": "Repo",
+      "properties": {
+        "name": "Runbook Agent",
+        "path": "sre/runbook-agent",
+        "url": "https://git.acme.example/sre/runbook-agent",
+        "description": "Walks an on-call engineer through a known runbook step by step.",
+        "value": "Encodes tribal knowledge that used to live only in a wiki.",
+        "last_commit": "2026-05-27",
+        "visibility": "internal",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "team-api-gateway",
+      "type": "Team",
+      "properties": {
+        "name": "api-gateway",
+        "namespace": "api-gateway",
+        "kind": "group",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "team-billing",
+      "type": "Team",
+      "properties": {
+        "name": "billing",
+        "namespace": "billing",
+        "kind": "group",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "team-data-eng",
+      "type": "Team",
+      "properties": {
+        "name": "data-eng",
+        "namespace": "data-eng",
+        "kind": "group",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "team-growth",
+      "type": "Team",
+      "properties": {
+        "name": "growth",
+        "namespace": "growth",
+        "kind": "group",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "team-ml-research",
+      "type": "Team",
+      "properties": {
+        "name": "ml-research",
+        "namespace": "ml-research",
+        "kind": "group",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "team-mobile",
+      "type": "Team",
+      "properties": {
+        "name": "mobile",
+        "namespace": "mobile",
+        "kind": "group",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "team-platform",
+      "type": "Team",
+      "properties": {
+        "name": "platform",
+        "namespace": "platform",
+        "kind": "group",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "team-search",
+      "type": "Team",
+      "properties": {
+        "name": "search",
+        "namespace": "search",
+        "kind": "group",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "team-security",
+      "type": "Team",
+      "properties": {
+        "name": "security",
+        "namespace": "security",
+        "kind": "group",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "team-sre",
+      "type": "Team",
+      "properties": {
+        "name": "sre",
+        "namespace": "sre",
+        "kind": "group",
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-anthropic",
+      "type": "TechStack",
+      "properties": {
+        "label": "Anthropic Claude",
+        "raw_label": "anthropic",
+        "term_id": "llm:anthropic",
+        "ontology_id": "llm-provider",
+        "_grounding_score": 0.98,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-apscheduler",
+      "type": "TechStack",
+      "properties": {
+        "label": "任务调度",
+        "raw_label": "apscheduler",
+        "term_id": "dd:apscheduler",
+        "ontology_id": "document-data",
+        "_grounding_score": 0.98,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-chromadb",
+      "type": "TechStack",
+      "properties": {
+        "label": "ChromaDB",
+        "raw_label": "chromadb",
+        "term_id": "sr:chromadb",
+        "ontology_id": "storage-retrieval",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-dbt",
+      "type": "TechStack",
+      "properties": {
+        "label": "dbt",
+        "raw_label": "dbt",
+        "_grounding_score": 0.5,
+        "_grounding_candidates": [
+          {
+            "term_id": "dd:rdkit",
+            "label": "RDKit",
+            "ontology_id": "document-data",
+            "score": 0.5,
+            "parent": null,
+            "matched_on": "fuzzy"
+          },
+          {
+            "term_id": "id:boto3",
+            "label": "boto3",
+            "ontology_id": "infra-deploy",
+            "score": 0.5,
+            "parent": null,
+            "matched_on": "fuzzy"
+          },
+          {
+            "term_id": "oe:weave",
+            "label": "W&B Weave",
+            "ontology_id": "observability-eval",
+            "score": 0.5,
+            "parent": null,
+            "matched_on": "fuzzy"
+          }
+        ],
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-docker",
+      "type": "TechStack",
+      "properties": {
+        "label": "Docker",
+        "raw_label": "docker",
+        "term_id": "id:docker",
+        "ontology_id": "infra-deploy",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-elasticsearch",
+      "type": "TechStack",
+      "properties": {
+        "label": "Elasticsearch",
+        "raw_label": "elasticsearch",
+        "term_id": "sr:elasticsearch",
+        "ontology_id": "storage-retrieval",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-fastapi",
+      "type": "TechStack",
+      "properties": {
+        "label": "FastAPI",
+        "raw_label": "fastapi",
+        "term_id": "ws:fastapi",
+        "ontology_id": "web-service",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-flask",
+      "type": "TechStack",
+      "properties": {
+        "label": "Flask",
+        "raw_label": "flask",
+        "term_id": "ws:flask",
+        "ontology_id": "web-service",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-github-actions",
+      "type": "TechStack",
+      "properties": {
+        "label": "GitHub Actions",
+        "raw_label": "github-actions",
+        "term_id": "id:github-actions",
+        "ontology_id": "infra-deploy",
+        "_grounding_score": 0.98,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-grafana",
+      "type": "TechStack",
+      "properties": {
+        "label": "Grafana 栈",
+        "raw_label": "grafana",
+        "term_id": "oe:grafana",
+        "ontology_id": "observability-eval",
+        "_grounding_score": 0.98,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-kubernetes",
+      "type": "TechStack",
+      "properties": {
+        "label": "Kubernetes",
+        "raw_label": "kubernetes",
+        "term_id": "id:kubernetes",
+        "ontology_id": "infra-deploy",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-langfuse",
+      "type": "TechStack",
+      "properties": {
+        "label": "Langfuse",
+        "raw_label": "langfuse",
+        "term_id": "oe:langfuse",
+        "ontology_id": "observability-eval",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-langgraph",
+      "type": "TechStack",
+      "properties": {
+        "label": "LangGraph",
+        "raw_label": "langgraph",
+        "term_id": "af:langgraph",
+        "ontology_id": "agent-framework",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-mlflow",
+      "type": "TechStack",
+      "properties": {
+        "label": "MLflow",
+        "raw_label": "mlflow",
+        "term_id": "oe:mlflow",
+        "ontology_id": "observability-eval",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-mongodb",
+      "type": "TechStack",
+      "properties": {
+        "label": "MongoDB",
+        "raw_label": "mongodb",
+        "term_id": "sr:mongodb",
+        "ontology_id": "storage-retrieval",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-oauth2",
+      "type": "TechStack",
+      "properties": {
+        "label": "OAuth2 / OIDC",
+        "raw_label": "oauth2",
+        "term_id": "pi:oauth2",
+        "ontology_id": "protocol-integration",
+        "_grounding_score": 0.98,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-openai",
+      "type": "TechStack",
+      "properties": {
+        "label": "OpenAI",
+        "raw_label": "openai",
+        "term_id": "llm:openai",
+        "ontology_id": "llm-provider",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-opentelemetry",
+      "type": "TechStack",
+      "properties": {
+        "label": "OpenTelemetry",
+        "raw_label": "opentelemetry",
+        "term_id": "oe:opentelemetry",
+        "ontology_id": "observability-eval",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-portkey",
+      "type": "TechStack",
+      "properties": {
+        "label": "Portkey",
+        "raw_label": "portkey",
+        "term_id": "llm:portkey",
+        "ontology_id": "llm-provider",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-postgresql",
+      "type": "TechStack",
+      "properties": {
+        "label": "PostgreSQL",
+        "raw_label": "postgresql",
+        "term_id": "sr:postgresql",
+        "ontology_id": "storage-retrieval",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-pytest",
+      "type": "TechStack",
+      "properties": {
+        "label": "pytest",
+        "raw_label": "pytest",
+        "term_id": "oe:pytest",
+        "ontology_id": "observability-eval",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-qdrant",
+      "type": "TechStack",
+      "properties": {
+        "label": "Qdrant",
+        "raw_label": "qdrant",
+        "term_id": "sr:qdrant",
+        "ontology_id": "storage-retrieval",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-redis",
+      "type": "TechStack",
+      "properties": {
+        "label": "Redis",
+        "raw_label": "redis",
+        "term_id": "sr:redis",
+        "ontology_id": "storage-retrieval",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-snowflake",
+      "type": "TechStack",
+      "properties": {
+        "label": "Snowflake",
+        "raw_label": "snowflake",
+        "term_id": "sr:snowflake",
+        "ontology_id": "storage-retrieval",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-streamlit",
+      "type": "TechStack",
+      "properties": {
+        "label": "Streamlit",
+        "raw_label": "streamlit",
+        "term_id": "ws:streamlit",
+        "ontology_id": "web-service",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-typer",
+      "type": "TechStack",
+      "properties": {
+        "label": "Typer",
+        "raw_label": "typer",
+        "term_id": "dt:typer",
+        "ontology_id": "dev-agent-tooling",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    },
+    {
+      "id": "tech-uv",
+      "type": "TechStack",
+      "properties": {
+        "label": "uv",
+        "raw_label": "uv",
+        "term_id": "dt:uv",
+        "ontology_id": "dev-agent-tooling",
+        "_grounding_score": 1.0,
+        "_last_updated": "2026-08-07",
+        "_sources": "data/seed.yaml"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "repo-api-gateway--edge-router__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-api-gateway--edge-router",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--dunning-service__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-billing--dunning-service",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--invoice-agent__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-billing--invoice-agent",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--etl-orchestrator__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-data-eng--etl-orchestrator",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--etl-orchestrator__DEPENDS_ON_INTERNAL__sys-forge",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-data-eng--etl-orchestrator",
+      "target": "sys-forge",
+      "properties": {
+        "evidence": "seed:forge",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--feature-store__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-data-eng--feature-store",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--warehouse-sync__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-data-eng--warehouse-sync",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--experiment-service__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-growth--experiment-service",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--model-router__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-growth--model-router",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--onboarding-agent__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-growth--onboarding-agent",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--support-agent__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-growth--support-agent",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--agent-benchmarks__DEPENDS_ON_INTERNAL__sys-forge",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-ml-research--agent-benchmarks",
+      "target": "sys-forge",
+      "properties": {
+        "evidence": "seed:forge",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--eval-harness__DEPENDS_ON_INTERNAL__sys-forge",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-ml-research--eval-harness",
+      "target": "sys-forge",
+      "properties": {
+        "evidence": "seed:forge",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--prompt-lab__DEPENDS_ON_INTERNAL__sys-beacon",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-ml-research--prompt-lab",
+      "target": "sys-beacon",
+      "properties": {
+        "evidence": "seed:beacon",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-mobile--support-agent__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-mobile--support-agent",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--agent-gateway__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-platform--agent-gateway",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--docs-bot__DEPENDS_ON_INTERNAL__sys-beacon",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-platform--docs-bot",
+      "target": "sys-beacon",
+      "properties": {
+        "evidence": "seed:beacon",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--query-planner__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-search--query-planner",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--relevance-agent__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-search--relevance-agent",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--access-review-bot__DEPENDS_ON_INTERNAL__sys-beacon",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-security--access-review-bot",
+      "target": "sys-beacon",
+      "properties": {
+        "evidence": "seed:beacon",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--compliance-agent__DEPENDS_ON_INTERNAL__sys-beacon",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-security--compliance-agent",
+      "target": "sys-beacon",
+      "properties": {
+        "evidence": "seed:beacon",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--secret-scanner__DEPENDS_ON_INTERNAL__sys-forge",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-security--secret-scanner",
+      "target": "sys-forge",
+      "properties": {
+        "evidence": "seed:forge",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--incident-copilot__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-sre--incident-copilot",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--incident-copilot__DEPENDS_ON_INTERNAL__sys-forge",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-sre--incident-copilot",
+      "target": "sys-forge",
+      "properties": {
+        "evidence": "seed:forge",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--runbook-agent__DEPENDS_ON_INTERNAL__sys-atlas",
+      "type": "DEPENDS_ON_INTERNAL",
+      "source": "repo-sre--runbook-agent",
+      "target": "sys-atlas",
+      "properties": {
+        "evidence": "seed:atlas",
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-api-gateway--edge-router__IN_DOMAIN__domain-platform-gateway-framework",
+      "type": "IN_DOMAIN",
+      "source": "repo-api-gateway--edge-router",
+      "target": "domain-platform-gateway-framework",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-api-gateway--legacy-router__IN_DOMAIN__domain-platform-gateway-framework",
+      "type": "IN_DOMAIN",
+      "source": "repo-api-gateway--legacy-router",
+      "target": "domain-platform-gateway-framework",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--dunning-service__IN_DOMAIN__domain-internal-productivity",
+      "type": "IN_DOMAIN",
+      "source": "repo-billing--dunning-service",
+      "target": "domain-internal-productivity",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--invoice-agent__IN_DOMAIN__domain-customer-facing-agents",
+      "type": "IN_DOMAIN",
+      "source": "repo-billing--invoice-agent",
+      "target": "domain-customer-facing-agents",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--etl-orchestrator__IN_DOMAIN__domain-data-platform-architecture",
+      "type": "IN_DOMAIN",
+      "source": "repo-data-eng--etl-orchestrator",
+      "target": "domain-data-platform-architecture",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--feature-store__IN_DOMAIN__domain-data-platform-architecture",
+      "type": "IN_DOMAIN",
+      "source": "repo-data-eng--feature-store",
+      "target": "domain-data-platform-architecture",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--warehouse-sync__IN_DOMAIN__domain-data-platform-architecture",
+      "type": "IN_DOMAIN",
+      "source": "repo-data-eng--warehouse-sync",
+      "target": "domain-data-platform-architecture",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--experiment-service__IN_DOMAIN__domain-tools-skills-evaluation",
+      "type": "IN_DOMAIN",
+      "source": "repo-growth--experiment-service",
+      "target": "domain-tools-skills-evaluation",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--model-router__IN_DOMAIN__domain-platform-gateway-framework",
+      "type": "IN_DOMAIN",
+      "source": "repo-growth--model-router",
+      "target": "domain-platform-gateway-framework",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--onboarding-agent__IN_DOMAIN__domain-customer-facing-agents",
+      "type": "IN_DOMAIN",
+      "source": "repo-growth--onboarding-agent",
+      "target": "domain-customer-facing-agents",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--support-agent__IN_DOMAIN__domain-customer-facing-agents",
+      "type": "IN_DOMAIN",
+      "source": "repo-growth--support-agent",
+      "target": "domain-customer-facing-agents",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--agent-benchmarks__IN_DOMAIN__domain-tools-skills-evaluation",
+      "type": "IN_DOMAIN",
+      "source": "repo-ml-research--agent-benchmarks",
+      "target": "domain-tools-skills-evaluation",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--eval-harness__IN_DOMAIN__domain-tools-skills-evaluation",
+      "type": "IN_DOMAIN",
+      "source": "repo-ml-research--eval-harness",
+      "target": "domain-tools-skills-evaluation",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--prompt-lab__IN_DOMAIN__domain-tools-skills-evaluation",
+      "type": "IN_DOMAIN",
+      "source": "repo-ml-research--prompt-lab",
+      "target": "domain-tools-skills-evaluation",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-mobile--support-agent__IN_DOMAIN__domain-customer-facing-agents",
+      "type": "IN_DOMAIN",
+      "source": "repo-mobile--support-agent",
+      "target": "domain-customer-facing-agents",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--agent-gateway__IN_DOMAIN__domain-platform-gateway-framework",
+      "type": "IN_DOMAIN",
+      "source": "repo-platform--agent-gateway",
+      "target": "domain-platform-gateway-framework",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--docs-bot__IN_DOMAIN__domain-internal-productivity",
+      "type": "IN_DOMAIN",
+      "source": "repo-platform--docs-bot",
+      "target": "domain-internal-productivity",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--internal-cli__IN_DOMAIN__domain-tools-skills-evaluation",
+      "type": "IN_DOMAIN",
+      "source": "repo-platform--internal-cli",
+      "target": "domain-tools-skills-evaluation",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--query-planner__IN_DOMAIN__domain-platform-gateway-framework",
+      "type": "IN_DOMAIN",
+      "source": "repo-search--query-planner",
+      "target": "domain-platform-gateway-framework",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--relevance-agent__IN_DOMAIN__domain-customer-facing-agents",
+      "type": "IN_DOMAIN",
+      "source": "repo-search--relevance-agent",
+      "target": "domain-customer-facing-agents",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--access-review-bot__IN_DOMAIN__domain-internal-productivity",
+      "type": "IN_DOMAIN",
+      "source": "repo-security--access-review-bot",
+      "target": "domain-internal-productivity",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--compliance-agent__IN_DOMAIN__domain-internal-productivity",
+      "type": "IN_DOMAIN",
+      "source": "repo-security--compliance-agent",
+      "target": "domain-internal-productivity",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--secret-scanner__IN_DOMAIN__domain-it-ops-infrastructure",
+      "type": "IN_DOMAIN",
+      "source": "repo-security--secret-scanner",
+      "target": "domain-it-ops-infrastructure",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--incident-copilot__IN_DOMAIN__domain-it-ops-infrastructure",
+      "type": "IN_DOMAIN",
+      "source": "repo-sre--incident-copilot",
+      "target": "domain-it-ops-infrastructure",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--runbook-agent__IN_DOMAIN__domain-it-ops-infrastructure",
+      "type": "IN_DOMAIN",
+      "source": "repo-sre--runbook-agent",
+      "target": "domain-it-ops-infrastructure",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-api-gateway--edge-router__OWNED_BY__team-api-gateway",
+      "type": "OWNED_BY",
+      "source": "repo-api-gateway--edge-router",
+      "target": "team-api-gateway",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-api-gateway--legacy-router__OWNED_BY__team-api-gateway",
+      "type": "OWNED_BY",
+      "source": "repo-api-gateway--legacy-router",
+      "target": "team-api-gateway",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--dunning-service__OWNED_BY__team-billing",
+      "type": "OWNED_BY",
+      "source": "repo-billing--dunning-service",
+      "target": "team-billing",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--invoice-agent__OWNED_BY__team-billing",
+      "type": "OWNED_BY",
+      "source": "repo-billing--invoice-agent",
+      "target": "team-billing",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--etl-orchestrator__OWNED_BY__team-data-eng",
+      "type": "OWNED_BY",
+      "source": "repo-data-eng--etl-orchestrator",
+      "target": "team-data-eng",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--feature-store__OWNED_BY__team-data-eng",
+      "type": "OWNED_BY",
+      "source": "repo-data-eng--feature-store",
+      "target": "team-data-eng",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--warehouse-sync__OWNED_BY__team-data-eng",
+      "type": "OWNED_BY",
+      "source": "repo-data-eng--warehouse-sync",
+      "target": "team-data-eng",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--experiment-service__OWNED_BY__team-growth",
+      "type": "OWNED_BY",
+      "source": "repo-growth--experiment-service",
+      "target": "team-growth",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--model-router__OWNED_BY__team-growth",
+      "type": "OWNED_BY",
+      "source": "repo-growth--model-router",
+      "target": "team-growth",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--onboarding-agent__OWNED_BY__team-growth",
+      "type": "OWNED_BY",
+      "source": "repo-growth--onboarding-agent",
+      "target": "team-growth",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--support-agent__OWNED_BY__team-growth",
+      "type": "OWNED_BY",
+      "source": "repo-growth--support-agent",
+      "target": "team-growth",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--agent-benchmarks__OWNED_BY__team-ml-research",
+      "type": "OWNED_BY",
+      "source": "repo-ml-research--agent-benchmarks",
+      "target": "team-ml-research",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--eval-harness__OWNED_BY__team-ml-research",
+      "type": "OWNED_BY",
+      "source": "repo-ml-research--eval-harness",
+      "target": "team-ml-research",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--prompt-lab__OWNED_BY__team-ml-research",
+      "type": "OWNED_BY",
+      "source": "repo-ml-research--prompt-lab",
+      "target": "team-ml-research",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-mobile--support-agent__OWNED_BY__team-mobile",
+      "type": "OWNED_BY",
+      "source": "repo-mobile--support-agent",
+      "target": "team-mobile",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--agent-gateway__OWNED_BY__team-platform",
+      "type": "OWNED_BY",
+      "source": "repo-platform--agent-gateway",
+      "target": "team-platform",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--docs-bot__OWNED_BY__team-platform",
+      "type": "OWNED_BY",
+      "source": "repo-platform--docs-bot",
+      "target": "team-platform",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--internal-cli__OWNED_BY__team-platform",
+      "type": "OWNED_BY",
+      "source": "repo-platform--internal-cli",
+      "target": "team-platform",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--query-planner__OWNED_BY__team-search",
+      "type": "OWNED_BY",
+      "source": "repo-search--query-planner",
+      "target": "team-search",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--relevance-agent__OWNED_BY__team-search",
+      "type": "OWNED_BY",
+      "source": "repo-search--relevance-agent",
+      "target": "team-search",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--access-review-bot__OWNED_BY__team-security",
+      "type": "OWNED_BY",
+      "source": "repo-security--access-review-bot",
+      "target": "team-security",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--compliance-agent__OWNED_BY__team-security",
+      "type": "OWNED_BY",
+      "source": "repo-security--compliance-agent",
+      "target": "team-security",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--secret-scanner__OWNED_BY__team-security",
+      "type": "OWNED_BY",
+      "source": "repo-security--secret-scanner",
+      "target": "team-security",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--incident-copilot__OWNED_BY__team-sre",
+      "type": "OWNED_BY",
+      "source": "repo-sre--incident-copilot",
+      "target": "team-sre",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--runbook-agent__OWNED_BY__team-sre",
+      "type": "OWNED_BY",
+      "source": "repo-sre--runbook-agent",
+      "target": "team-sre",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-api-gateway--edge-router__USES_TECH__tech-docker",
+      "type": "USES_TECH",
+      "source": "repo-api-gateway--edge-router",
+      "target": "tech-docker",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-api-gateway--edge-router__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-api-gateway--edge-router",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-api-gateway--edge-router__USES_TECH__tech-kubernetes",
+      "type": "USES_TECH",
+      "source": "repo-api-gateway--edge-router",
+      "target": "tech-kubernetes",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-api-gateway--legacy-router__USES_TECH__tech-docker",
+      "type": "USES_TECH",
+      "source": "repo-api-gateway--legacy-router",
+      "target": "tech-docker",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-api-gateway--legacy-router__USES_TECH__tech-flask",
+      "type": "USES_TECH",
+      "source": "repo-api-gateway--legacy-router",
+      "target": "tech-flask",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--dunning-service__USES_TECH__tech-apscheduler",
+      "type": "USES_TECH",
+      "source": "repo-billing--dunning-service",
+      "target": "tech-apscheduler",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--dunning-service__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-billing--dunning-service",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--dunning-service__USES_TECH__tech-postgresql",
+      "type": "USES_TECH",
+      "source": "repo-billing--dunning-service",
+      "target": "tech-postgresql",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--invoice-agent__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-billing--invoice-agent",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--invoice-agent__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-billing--invoice-agent",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-billing--invoice-agent__USES_TECH__tech-postgresql",
+      "type": "USES_TECH",
+      "source": "repo-billing--invoice-agent",
+      "target": "tech-postgresql",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--etl-orchestrator__USES_TECH__tech-dbt",
+      "type": "USES_TECH",
+      "source": "repo-data-eng--etl-orchestrator",
+      "target": "tech-dbt",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--etl-orchestrator__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-data-eng--etl-orchestrator",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--etl-orchestrator__USES_TECH__tech-postgresql",
+      "type": "USES_TECH",
+      "source": "repo-data-eng--etl-orchestrator",
+      "target": "tech-postgresql",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--feature-store__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-data-eng--feature-store",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--feature-store__USES_TECH__tech-postgresql",
+      "type": "USES_TECH",
+      "source": "repo-data-eng--feature-store",
+      "target": "tech-postgresql",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--feature-store__USES_TECH__tech-redis",
+      "type": "USES_TECH",
+      "source": "repo-data-eng--feature-store",
+      "target": "tech-redis",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--warehouse-sync__USES_TECH__tech-dbt",
+      "type": "USES_TECH",
+      "source": "repo-data-eng--warehouse-sync",
+      "target": "tech-dbt",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--warehouse-sync__USES_TECH__tech-postgresql",
+      "type": "USES_TECH",
+      "source": "repo-data-eng--warehouse-sync",
+      "target": "tech-postgresql",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-data-eng--warehouse-sync__USES_TECH__tech-snowflake",
+      "type": "USES_TECH",
+      "source": "repo-data-eng--warehouse-sync",
+      "target": "tech-snowflake",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--experiment-service__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-growth--experiment-service",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--experiment-service__USES_TECH__tech-mlflow",
+      "type": "USES_TECH",
+      "source": "repo-growth--experiment-service",
+      "target": "tech-mlflow",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--experiment-service__USES_TECH__tech-postgresql",
+      "type": "USES_TECH",
+      "source": "repo-growth--experiment-service",
+      "target": "tech-postgresql",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--model-router__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-growth--model-router",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--model-router__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-growth--model-router",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--model-router__USES_TECH__tech-portkey",
+      "type": "USES_TECH",
+      "source": "repo-growth--model-router",
+      "target": "tech-portkey",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--model-router__USES_TECH__tech-qdrant",
+      "type": "USES_TECH",
+      "source": "repo-growth--model-router",
+      "target": "tech-qdrant",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--model-router__USES_TECH__tech-redis",
+      "type": "USES_TECH",
+      "source": "repo-growth--model-router",
+      "target": "tech-redis",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--onboarding-agent__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-growth--onboarding-agent",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--onboarding-agent__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-growth--onboarding-agent",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--onboarding-agent__USES_TECH__tech-postgresql",
+      "type": "USES_TECH",
+      "source": "repo-growth--onboarding-agent",
+      "target": "tech-postgresql",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--support-agent__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-growth--support-agent",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--support-agent__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-growth--support-agent",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-growth--support-agent__USES_TECH__tech-mongodb",
+      "type": "USES_TECH",
+      "source": "repo-growth--support-agent",
+      "target": "tech-mongodb",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--agent-benchmarks__USES_TECH__tech-langfuse",
+      "type": "USES_TECH",
+      "source": "repo-ml-research--agent-benchmarks",
+      "target": "tech-langfuse",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--agent-benchmarks__USES_TECH__tech-pytest",
+      "type": "USES_TECH",
+      "source": "repo-ml-research--agent-benchmarks",
+      "target": "tech-pytest",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--eval-harness__USES_TECH__tech-langfuse",
+      "type": "USES_TECH",
+      "source": "repo-ml-research--eval-harness",
+      "target": "tech-langfuse",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--eval-harness__USES_TECH__tech-mlflow",
+      "type": "USES_TECH",
+      "source": "repo-ml-research--eval-harness",
+      "target": "tech-mlflow",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--eval-harness__USES_TECH__tech-pytest",
+      "type": "USES_TECH",
+      "source": "repo-ml-research--eval-harness",
+      "target": "tech-pytest",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--prompt-lab__USES_TECH__tech-anthropic",
+      "type": "USES_TECH",
+      "source": "repo-ml-research--prompt-lab",
+      "target": "tech-anthropic",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--prompt-lab__USES_TECH__tech-openai",
+      "type": "USES_TECH",
+      "source": "repo-ml-research--prompt-lab",
+      "target": "tech-openai",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-ml-research--prompt-lab__USES_TECH__tech-streamlit",
+      "type": "USES_TECH",
+      "source": "repo-ml-research--prompt-lab",
+      "target": "tech-streamlit",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-mobile--support-agent__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-mobile--support-agent",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-mobile--support-agent__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-mobile--support-agent",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-mobile--support-agent__USES_TECH__tech-mongodb",
+      "type": "USES_TECH",
+      "source": "repo-mobile--support-agent",
+      "target": "tech-mongodb",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--agent-gateway__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-platform--agent-gateway",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--agent-gateway__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-platform--agent-gateway",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--agent-gateway__USES_TECH__tech-portkey",
+      "type": "USES_TECH",
+      "source": "repo-platform--agent-gateway",
+      "target": "tech-portkey",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--agent-gateway__USES_TECH__tech-redis",
+      "type": "USES_TECH",
+      "source": "repo-platform--agent-gateway",
+      "target": "tech-redis",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--docs-bot__USES_TECH__tech-chromadb",
+      "type": "USES_TECH",
+      "source": "repo-platform--docs-bot",
+      "target": "tech-chromadb",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--docs-bot__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-platform--docs-bot",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--docs-bot__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-platform--docs-bot",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--internal-cli__USES_TECH__tech-typer",
+      "type": "USES_TECH",
+      "source": "repo-platform--internal-cli",
+      "target": "tech-typer",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-platform--internal-cli__USES_TECH__tech-uv",
+      "type": "USES_TECH",
+      "source": "repo-platform--internal-cli",
+      "target": "tech-uv",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--query-planner__USES_TECH__tech-elasticsearch",
+      "type": "USES_TECH",
+      "source": "repo-search--query-planner",
+      "target": "tech-elasticsearch",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--query-planner__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-search--query-planner",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--query-planner__USES_TECH__tech-redis",
+      "type": "USES_TECH",
+      "source": "repo-search--query-planner",
+      "target": "tech-redis",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--relevance-agent__USES_TECH__tech-anthropic",
+      "type": "USES_TECH",
+      "source": "repo-search--relevance-agent",
+      "target": "tech-anthropic",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--relevance-agent__USES_TECH__tech-elasticsearch",
+      "type": "USES_TECH",
+      "source": "repo-search--relevance-agent",
+      "target": "tech-elasticsearch",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-search--relevance-agent__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-search--relevance-agent",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--access-review-bot__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-security--access-review-bot",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--access-review-bot__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-security--access-review-bot",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--access-review-bot__USES_TECH__tech-oauth2",
+      "type": "USES_TECH",
+      "source": "repo-security--access-review-bot",
+      "target": "tech-oauth2",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--compliance-agent__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-security--compliance-agent",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--compliance-agent__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-security--compliance-agent",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--compliance-agent__USES_TECH__tech-mongodb",
+      "type": "USES_TECH",
+      "source": "repo-security--compliance-agent",
+      "target": "tech-mongodb",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--secret-scanner__USES_TECH__tech-github-actions",
+      "type": "USES_TECH",
+      "source": "repo-security--secret-scanner",
+      "target": "tech-github-actions",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-security--secret-scanner__USES_TECH__tech-typer",
+      "type": "USES_TECH",
+      "source": "repo-security--secret-scanner",
+      "target": "tech-typer",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--incident-copilot__USES_TECH__tech-grafana",
+      "type": "USES_TECH",
+      "source": "repo-sre--incident-copilot",
+      "target": "tech-grafana",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--incident-copilot__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-sre--incident-copilot",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--incident-copilot__USES_TECH__tech-opentelemetry",
+      "type": "USES_TECH",
+      "source": "repo-sre--incident-copilot",
+      "target": "tech-opentelemetry",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--runbook-agent__USES_TECH__tech-fastapi",
+      "type": "USES_TECH",
+      "source": "repo-sre--runbook-agent",
+      "target": "tech-fastapi",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--runbook-agent__USES_TECH__tech-langgraph",
+      "type": "USES_TECH",
+      "source": "repo-sre--runbook-agent",
+      "target": "tech-langgraph",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    },
+    {
+      "id": "repo-sre--runbook-agent__USES_TECH__tech-mlflow",
+      "type": "USES_TECH",
+      "source": "repo-sre--runbook-agent",
+      "target": "tech-mlflow",
+      "properties": {
+        "_last_updated": "2026-08-07"
+      }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+name: acme-corp
+
+purpose: >
+  Worked example: a fictional company ("Acme Corp") with ~26 repos across
+  10 teams, run through the full capmap pipeline. Every repo, team, and
+  description here is invented for this example — none of it is scanned
+  from a real organisation. Its purpose is to show what `capmap view`
+  actually surfaces, not to model a specific company.
+
+paths:
+  kg: kg/capability-map.json
+  schema: schema/kg-schema.yaml
+  manifest: data/processed/manifest.json
+  changelog: kg/changelog.md
+  health: kg/health-manifest.json
+  review: review
+  suggestions: kg/vocabulary-suggestions.md
+
+onto:
+  backend: local
+  extra_shard_dirs:
+    - vocabulary
+
+health:
+  semantic_types: [TechStack, Capability, Pattern, InternalSystem]
+
+merge:
+  strategies:
+    - {type: alias, node_type: TechStack, id_prefix: "tech-"}
+    - {type: alias, node_type: InternalSystem, id_prefix: "sys-"}
+    - {type: alias, node_type: Pattern, id_prefix: "pattern-"}
+    - {type: fuzzy_label, node_type: TechStack, threshold: 0.93}
+    - {type: natural_key, node_type: Repo, key_prop: path}
+    - {type: multi_token, node_type: TechStack}
+
+llm:
+  default_model: ollama/gemma3:latest
+
+# The seed data is a single self-contained YAML file, not a live scan — this
+# instance exists to demonstrate the pipeline, not to track a real inventory.
+source:
+  dir: data
+  files:
+    seed: seed.yaml
+
+deployment: public

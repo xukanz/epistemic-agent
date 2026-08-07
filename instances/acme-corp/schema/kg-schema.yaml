@@ -1,0 +1,167 @@
+# KG schema for acme-corp
+#
+# Starts as a minimal core. Do NOT add types preemptively. Add one only when:
+#   (a) real ingestion surfaces entities that don't fit an existing type, AND
+#   (b) a human has approved the addition.
+#
+# Validation is advisory: an unknown type is recorded as a warning by
+# GraphStore, never rejected. The schema follows the data.
+
+nodes:
+  # --- structural: identified by natural keys, never grounded ---
+  Repo:
+    label: 代码仓库
+    key: path                      # globally unique; NaturalKeyGuard enforces it
+    properties:
+      name: str
+      path: str                    # full namespace path, e.g. team/sub/repo
+      url: str
+      description: str
+      star_count: int
+      last_commit: str             # last *human* commit, not last activity
+      created_at: str
+      visibility: str
+      archived: bool
+      tier: str                    # portability grade, if the instance grades repos
+      reuse: str
+      value: str                   # what is worth taking from this repo
+      _last_updated: str
+      _sources: str
+
+  Team:
+    label: 团队
+    properties:
+      name: str
+      namespace: str
+      kind: str                    # group | personal
+      _last_updated: str
+      _sources: str
+
+  Person:
+    label: 人员
+    properties:
+      name: str
+      username: str
+      _last_updated: str
+      _sources: str
+
+  Domain:
+    label: 业务领域
+    properties:
+      label: str
+      _last_updated: str
+      _sources: str
+
+  # --- semantic: grounded against the controlled vocabulary ---
+  TechStack:
+    label: 技术组件
+    properties:
+      label: str
+      raw_label: str               # as written in the source, before normalisation
+      category: str
+      ontology_id: str             # vocabulary shard
+      term_id: str
+      _grounding_score: float
+      _grounding_candidates: list
+      _last_updated: str
+      _sources: str
+
+  Capability:
+    label: 技术能力
+    properties:
+      label: str
+      maturity: str                # emerging | established | leading
+      ontology_id: str
+      term_id: str
+      _grounding_score: float
+      _grounding_candidates: list
+      _last_updated: str
+      _sources: str
+
+  Pattern:
+    label: 架构模式
+    properties:
+      label: str
+      description: str
+      ontology_id: str
+      term_id: str
+      _grounding_score: float
+      _grounding_candidates: list
+      _last_updated: str
+      _sources: str
+
+  InternalSystem:
+    label: 内部系统
+    properties:
+      label: str
+      kind: str                    # platform | gateway | data-source | tool
+      replaceable: str             # what an outside org would substitute
+      ontology_id: str
+      term_id: str
+      _grounding_score: float
+      _last_updated: str
+      _sources: str
+
+  Untyped:
+    label: 未分类
+    properties:
+      label: str
+      suggested_type: str
+      _note: str
+      _last_updated: str
+      _sources: str
+
+edges:
+  OWNED_BY:
+    source: Repo
+    target: Team
+
+  MAINTAINS:
+    source: Person
+    target: Repo
+
+  USES_TECH:
+    source: Repo
+    target: TechStack
+
+  DEMONSTRATES:
+    source: Repo
+    target: Capability
+
+  IMPLEMENTS:
+    source: Repo
+    target: Pattern
+
+  IN_DOMAIN:
+    source: Repo
+    target: Domain
+
+  DEPENDS_ON_INTERNAL:
+    source: Repo
+    target: InternalSystem
+    properties:
+      evidence: str
+
+  # Asserted only after a human confirms a duplicate-effort review item.
+  DUPLICATES:
+    source: Repo
+    target: Repo
+    properties:
+      evidence: str
+      decided_by: str
+
+  COLLABORATES_WITH:
+    source: Team
+    target: Team
+    properties:
+      evidence: str
+
+  SPECIALIZES:
+    source: TechStack
+    target: TechStack
+
+  ALTERNATIVE_TO:
+    source: TechStack
+    target: TechStack
+    properties:
+      evidence: str

@@ -31,7 +31,17 @@
 | 内部系统依赖集中度 | 少数几个内部网关/平台被大部分仓库依赖                                               |
 | 待人工审查         | 接地置信度落在 0.50–0.70 的条目，交给人判断                                        |
 
-具体验证用的这份数据是某个组织的真实内部仓库清单，不随本仓库分发；`instances/` 下没有现成的已运行实例，跑 [快速开始](#快速开始) 里的 `capmap init` 可以在自己的数据上重复同一条流水线。
+具体验证用的这份数据是某个组织的真实内部仓库清单，不随本仓库分发。仓库里带的是一份跑得通的小规模示例：
+
+```
+cd instances/acme-corp
+python scripts/bootstrap.py --out payload.bootstrap.json
+capmap ingest payload.bootstrap.json
+capmap merge && capmap health
+capmap view duplicates
+```
+
+`instances/acme-corp/` 是一家虚构公司（"Acme Corp"，约 25 个仓库、10 个团队），数据全部是编造的，跑的是和真实验证完全相同的一套流水线。`data/seed.yaml` 里特意埋了几个信号，跑完能在对应视图里直接看到：一对跨团队、同领域、栈高度重合的独立重复投入（`duplicates` 视图的 `independent` 分类），一对同名 fork/副本（`same-name` 分类），几个单团队掌握的技术（`risk` 视图的 bus-factor=1），以及一个大部分仓库都依赖的虚构内部网关（`risk` 视图的内部系统集中度）。跑 [快速开始](#快速开始) 里的 `capmap init` 可以在自己的数据上重复同一条流水线。
 
 ---
 
@@ -106,6 +116,7 @@ epistemic_agent/
   template/                新实例脚手架（CLAUDE.md + 5 个 skill + schema + config）
 
 instances/
+  acme-corp/               跑得通的虚构示例，见上方"现状"一节
   <your-instance>/         capmap init 生成，见下方目录结构
     vocabulary/            实例专属词表
     scripts/bootstrap.py   确定性冷启动（自己写，参考 docs/new-instance.md）
