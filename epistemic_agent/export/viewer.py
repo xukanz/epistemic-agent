@@ -221,3 +221,109 @@ def view_summary(kg: dict) -> list[dict]:
             }
         )
     return rows
+
+
+_EXPORT_EXTENSIONS = {"html": "html", "graphml": "graphml", "gexf": "gexf",
+                      "cypher": "cypher", "dot": "dot"}
+
+_EXPORT_TIPS = {
+    "html": "Open directly in a browser (double-click, or xdg-open/open) — no network needed.",
+    "graphml": "Import into Gephi / Cytoscape / yEd, or read with networkx.read_graphml().",
+    "gexf": "Import into Gephi — its native format, friendlier property panel.",
+    "cypher": "cat <file> | cypher-shell -u neo4j -p <password>. Sample queries at the end of the file.",
+    "dot": "dot -Tsvg <file> -o out.svg (or neato/fdp for mesh-like graphs).",
+}
+
+
+def run_export(
+    proj,
+    fmt: str = "html",
+    output=None,
+    default_view: str = "tech",
+    node_type: str | None = None,
+    around: str | None = None,
+    hops: int = 1,
+    keep_sources: bool = False,
+) -> dict:
+    """Filter and render the KG to a file. Shared by `cli.py`'s `export`
+    command and the agent's `export` tool, so the neighbourhood/type
+    filtering logic (see the module docstring's caveats about disconnected
+    subgraphs) is implemented once. Returns a plain dict rather than
+    printing, so callers decide how to present it.
+    """
+    from pathlib import Path
+
+    from epistemic_agent.export.formats import WRITERS
+
+    kg = proj.load_kg()
+    notes: list[str] = []
+
+    if around:
+        from epistemic_agent.analysis.inspect import build_index, resolve_node
+
+        idx = build_index(kg)
+        seeds, how = resolve_node(idx, around, proj.vocabulary())
+        if not seeds:
+            return {"error": f"Could not resolve {around!r}."}
+        notes.append(f"{len(seeds)} seed node(s) ({how}), expanded {hops} hop(s)")
+        frontier, keep_ids = set(seeds), set(seeds)
+        for _ in range(max(0, hops)):
+            nxt: set[str] = set()
+            for e in kg["edges"]:
+                if e["source"] in frontier:
+                    nxt.add(e["target"])
+                if e["target"] in frontier:
+                    nxt.add(e["source"])
+            nxt -= keep_ids
+            keep_ids |= nxt
+            frontier = nxt
+            if not frontier:
+                break
+        kg = {
+            "nodes": [n for n in kg["nodes"] if n["id"] in keep_ids],
+            "edges": [e for e in kg["edges"] if e["source"] in keep_ids and e["target"] in keep_ids],
+        }
+        notes.append(f"neighbourhood subgraph: {len(kg['nodes'])} nodes / {len(kg['edges'])} edges")
+
+    if node_type:
+        keep = {t.strip() for t in node_type.split(",") if t.strip()}
+        unknown = keep - {n["type"] for n in kg["nodes"]}
+        if unknown:
+            notes.append(f"graph has no nodes of type: {', '.join(sorted(unknown))}")
+        kept = [n for n in kg["nodes"] if n["type"] in keep]
+        ids = {n["id"] for n in kept}
+        # Both ends must survive or the edge is dropped, else dangling refs.
+        kg = {"nodes": kept, "edges": [e for e in kg["edges"] if e["source"] in ids and e["target"] in ids]}
+        notes.append(f"filtered to {len(kg['nodes'])} nodes / {len(kg['edges'])} edges")
+        if kg["nodes"] and not kg["edges"]:
+            notes.append(
+                "no edges survived the filter — these types may not connect directly "
+                "(e.g. Domain and InternalSystem both only connect to Repo); use "
+                "around= for a connected subgraph, or include Repo in node_type"
+            )
+
+    if fmt not in _EXPORT_EXTENSIONS:
+        return {"error": f"Unknown format {fmt!r} — choose from {', '.join(_EXPORT_EXTENSIONS)}"}
+    out = Path(output) if output else (proj.root / f"kg/capability-map.{_EXPORT_EXTENSIONS[fmt]}")
+
+    if fmt == "html":
+        text = build_html(kg, title=proj.name, default_view=default_view)
+    else:
+        try:
+            text = WRITERS[fmt](kg) if fmt == "dot" else WRITERS[fmt](kg, keep_sources)
+        except ValueError as exc:
+            return {"error": str(exc)}
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(text, encoding="utf-8")
+
+    return {
+        "output_path": out,
+        "size_bytes": out.stat().st_size,
+        "nodes": len(kg["nodes"]),
+        "edges": len(kg["edges"]),
+        "format": fmt,
+        "notes": notes,
+        "tip": _EXPORT_TIPS[fmt],
+        "kg": kg,  # post-filter graph, e.g. for view_summary() on the html path
+    }

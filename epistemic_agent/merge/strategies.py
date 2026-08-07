@@ -485,3 +485,87 @@ _ID_SUFFIX = re.compile(r"-(multi|inferred)$")
 
 def strip_quarantine_suffix(node_id: str) -> str:
     return _ID_SUFFIX.sub("", node_id)
+
+
+def run_merge(proj, dry_run: bool = False, report_path=None, max_rounds: int = 5) -> dict:
+    """Run the merge strategies configured in `project.yaml` to a fixed point.
+
+    Shared by `cli.py`'s `merge` command and the agent's `merge_dry_run` /
+    `merge_apply` tools, so the fixed-point iteration (folding one alias can
+    make another node newly matchable — see the module docstring) is
+    implemented once. Returns a plain dict rather than printing, so callers
+    decide how to present it (rich console, or a string handed back to an
+    LLM tool call).
+    """
+    from pathlib import Path
+
+    kg = proj.load_kg()
+    before_nodes, before_edges = len(kg["nodes"]), len(kg["edges"])
+    vocab = proj.vocabulary()
+
+    if not strategies_from_config(proj.config, vocabulary=vocab):
+        return {"error": "No merge strategies configured (merge.strategies in config/project.yaml)."}
+
+    working = json.loads(json.dumps(kg)) if dry_run else kg
+    all_merges: dict[str, str] = {}
+    all_notes: dict[str, str] = {}
+    mstats: dict = {}
+    rounds = 0
+
+    while rounds < max_rounds:
+        strategies = strategies_from_config(proj.config, vocabulary=vocab)
+        merge_map, notes, canonical_props = build_merge_map(working, strategies)
+        all_notes.update(notes)
+        if not merge_map:
+            break
+        rounds += 1
+        for old, new in list(all_merges.items()):
+            if new in merge_map:
+                all_merges[old] = merge_map[new]
+        all_merges.update(merge_map)
+        all_merges = {k: v for k, v in all_merges.items() if k != v}
+        working = apply_merges(working, merge_map, notes, canonical_props)
+        round_stats = working.pop("_merge_stats", {})
+        for k, v in round_stats.items():
+            mstats[k] = mstats.get(k, 0) + v if isinstance(v, int) else v
+
+    violations = {k: v for k, v in all_notes.items() if k.startswith("!")}
+
+    report_path = Path(report_path) if report_path else (proj.root / "kg" / "merge-report.md")
+    lines = [
+        "# KG merge report",
+        "",
+        f"- Nodes: {before_nodes} → {len(working['nodes'])}",
+        f"- Edges: {before_edges} → {len(working['edges'])}",
+        f"- Merges: {len(all_merges)} over {rounds} round(s)",
+        f"- Invariant violations: {len(violations)}",
+        "",
+    ]
+    if violations:
+        lines += ["## Invariant violations (not merged — fix the ingest)", ""]
+        lines += [f"- {v}" for v in violations.values()]
+        lines += [""]
+    lines += ["## Merge map", "", "| old | new | reason |", "|---|---|---|"]
+    for old, new in sorted(all_merges.items(), key=lambda x: (x[1], x[0])):
+        lines.append(f"| `{old}` | `{new}` | {all_notes.get(old, '')} |")
+    report_text = "\n".join(lines) + "\n"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(report_text)
+
+    if not dry_run:
+        proj.kg_path.write_text(json.dumps(working, indent=2, ensure_ascii=False) + "\n")
+
+    return {
+        "dry_run": dry_run,
+        "before_nodes": before_nodes,
+        "before_edges": before_edges,
+        "after_nodes": len(working["nodes"]),
+        "after_edges": len(working["edges"]),
+        "merges": len(all_merges),
+        "rounds": rounds,
+        "hit_max_rounds": rounds >= max_rounds,
+        "violations": len(violations),
+        "merge_stats": mstats,
+        "report_path": report_path,
+        "report_text": report_text,
+    }

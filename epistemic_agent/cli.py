@@ -10,6 +10,7 @@
     capmap vocab-draft        Cluster ungrounded labels into a draft vocabulary
     capmap view <name>        Coverage / duplicates / gaps / experts / risk
     capmap ingest <payload>   Write a payload into the KG
+    capmap agent              Start an interactive, tool-using agent session
 
 Every command resolves its paths from `config/project.yaml`, found by walking
 up from the working directory, through one resolver (`Project`). A script that
@@ -25,90 +26,14 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-import yaml
 from rich.console import Console
+
+from epistemic_agent.project import Project, find_project
 
 app = typer.Typer(help="epistemic-agent CLI", add_completion=False, no_args_is_help=True)
 console = Console()
 
 _TEMPLATE_DIR = Path(__file__).parent / "template"
-
-
-# ---------------------------------------------------------------------------
-# Project resolution
-
-
-class Project:
-    def __init__(self, root: Path, config: dict):
-        self.root = root
-        self.config = config
-
-    @property
-    def name(self) -> str:
-        return self.config.get("name", self.root.name)
-
-    def _p(self, key: str, default: str) -> Path:
-        rel = (self.config.get("paths") or {}).get(key, default)
-        return self.root / rel
-
-    @property
-    def kg_path(self) -> Path:
-        return self._p("kg", "kg/capability-map.json")
-
-    @property
-    def schema_path(self) -> Path:
-        return self._p("schema", "schema/kg-schema.yaml")
-
-    @property
-    def manifest_path(self) -> Path:
-        return self._p("manifest", "data/processed/manifest.json")
-
-    @property
-    def changelog_path(self) -> Path:
-        return self._p("changelog", "kg/changelog.md")
-
-    @property
-    def health_path(self) -> Path:
-        return self._p("health", "kg/health-manifest.json")
-
-    @property
-    def review_dir(self) -> Path:
-        return self._p("review", "review")
-
-    @property
-    def suggestions_path(self) -> Path:
-        return self._p("suggestions", "kg/vocabulary-suggestions.md")
-
-    def vocabulary(self):
-        from epistemic_agent.onto.client import resolve_backend
-
-        return resolve_backend(self.config, self.root)
-
-    def semantic_types(self) -> set[str]:
-        st = (self.config.get("health") or {}).get("semantic_types")
-        if st:
-            return set(st)
-        from epistemic_agent.health.manifest import DEFAULT_SEMANTIC_TYPES
-
-        return set(DEFAULT_SEMANTIC_TYPES)
-
-    def load_kg(self) -> dict:
-        if not self.kg_path.exists():
-            console.print(f"[red]KG not found:[/red] {self.kg_path}")
-            console.print("[dim]Run the instance bootstrap or `capmap ingest` first.[/dim]")
-            raise typer.Exit(1)
-        return json.loads(self.kg_path.read_text())
-
-
-def find_project(start: Optional[Path] = None) -> Project:
-    cur = (start or Path.cwd()).resolve()
-    for candidate in [cur, *cur.parents]:
-        cfg = candidate / "config" / "project.yaml"
-        if cfg.exists():
-            return Project(candidate, yaml.safe_load(cfg.read_text()) or {})
-    console.print("[red]No config/project.yaml found[/red] in this directory or any parent.")
-    console.print("[dim]Run `capmap init <name>` to scaffold an instance.[/dim]")
-    raise typer.Exit(1)
 
 
 # ---------------------------------------------------------------------------
@@ -229,72 +154,17 @@ def merge(
     Iterating here means one `capmap merge` is actually enough — otherwise the
     graph silently depends on how many times someone happened to run it.
     """
-    from epistemic_agent.merge.strategies import (
-        apply_merges,
-        build_merge_map,
-        strategies_from_config,
-    )
+    from epistemic_agent.merge.strategies import run_merge
 
     proj = find_project()
-    kg = proj.load_kg()
-    before_nodes, before_edges = len(kg["nodes"]), len(kg["edges"])
-    vocab = proj.vocabulary()
-
-    if not strategies_from_config(proj.config, vocabulary=vocab):
-        console.print("[yellow]No merge strategies configured[/yellow] (merge.strategies in "
-                      "config/project.yaml).")
+    result = run_merge(proj, dry_run=dry_run, report_path=report, max_rounds=max_rounds)
+    if "error" in result:
+        console.print(f"[yellow]{result['error']}[/yellow]")
         raise typer.Exit(1)
 
-    working = json.loads(json.dumps(kg)) if dry_run else kg
-    all_merges: dict[str, str] = {}
-    all_notes: dict[str, str] = {}
-    mstats: dict = {}
-    rounds = 0
-
-    while rounds < max_rounds:
-        strategies = strategies_from_config(proj.config, vocabulary=vocab)
-        merge_map, notes, canonical_props = build_merge_map(working, strategies)
-        all_notes.update(notes)
-        if not merge_map:
-            break
-        rounds += 1
-        # Compose with earlier rounds so the report shows where each original
-        # ID finally landed, not where it landed one hop ago.
-        for old, new in list(all_merges.items()):
-            if new in merge_map:
-                all_merges[old] = merge_map[new]
-        all_merges.update(merge_map)
-        all_merges = {k: v for k, v in all_merges.items() if k != v}
-        working = apply_merges(working, merge_map, notes, canonical_props)
-        round_stats = working.pop("_merge_stats", {})
-        for k, v in round_stats.items():
-            mstats[k] = mstats.get(k, 0) + v if isinstance(v, int) else v
-
-    violations = {k: v for k, v in all_notes.items() if k.startswith("!")}
-
-    report = report or (proj.root / "kg" / "merge-report.md")
-    lines = [
-        "# KG merge report",
-        "",
-        f"- Nodes: {before_nodes} → {len(working['nodes'])}",
-        f"- Edges: {before_edges} → {len(working['edges'])}",
-        f"- Merges: {len(all_merges)} over {rounds} round(s)",
-        f"- Invariant violations: {len(violations)}",
-        "",
-    ]
-    if violations:
-        lines += ["## Invariant violations (not merged — fix the ingest)", ""]
-        lines += [f"- {v}" for v in violations.values()]
-        lines += [""]
-    lines += ["## Merge map", "", "| old | new | reason |", "|---|---|---|"]
-    for old, new in sorted(all_merges.items(), key=lambda x: (x[1], x[0])):
-        lines.append(f"| `{old}` | `{new}` | {all_notes.get(old, '')} |")
-    report.parent.mkdir(parents=True, exist_ok=True)
-    report.write_text("\n".join(lines) + "\n")
-
-    if violations:
-        console.print(f"[yellow]{len(violations)} invariant violation(s)[/yellow] — see report")
-    if rounds >= max_rounds:
+    if result["violations"]:
+        console.print(f"[yellow]{result['violations']} invariant violation(s)[/yellow] — see report")
+    if result["hit_max_rounds"]:
         console.print(
             f"[yellow]Hit the {max_rounds}-round cap[/yellow] — the merge has not converged. "
             "Check the report for a strategy pair that keeps renaming the same nodes."
@@ -302,21 +172,21 @@ def merge(
 
     if dry_run:
         console.print(
-            f"[yellow]DRY RUN[/yellow] — {len(all_merges)} merges planned over {rounds} "
-            f"round(s). Report: {report}"
+            f"[yellow]DRY RUN[/yellow] — {result['merges']} merges planned over "
+            f"{result['rounds']} round(s). Report: {result['report_path']}"
         )
         return
 
-    proj.kg_path.write_text(json.dumps(working, indent=2, ensure_ascii=False) + "\n")
-    console.print(f"Merges applied: {len(all_merges)} over {rounds} round(s)")
-    console.print(f"Nodes: {before_nodes} → {len(working['nodes'])}")
-    console.print(f"Edges: {before_edges} → {len(working['edges'])}")
+    mstats = result["merge_stats"]
+    console.print(f"Merges applied: {result['merges']} over {result['rounds']} round(s)")
+    console.print(f"Nodes: {result['before_nodes']} → {result['after_nodes']}")
+    console.print(f"Edges: {result['before_edges']} → {result['after_edges']}")
     console.print(
         f"[dim]dropped {mstats.get('dropped_duplicates', 0)} duplicate edges, "
         f"{mstats.get('dropped_self_loops', 0)} self-loops; "
         f"{mstats.get('properties_asserted', 0)} properties set from the vocabulary[/dim]"
     )
-    console.print(f"Report: {report}")
+    console.print(f"Report: {result['report_path']}")
 
 
 # ---------------------------------------------------------------------------
@@ -656,70 +526,22 @@ def export(
                                       help="保留 _sources（体积大，可视化时是噪声）"),
 ):
     """把图谱导出成可视化 / 图分析工具能吃的格式。"""
-    from epistemic_agent.export.formats import WRITERS
-    from epistemic_agent.export.viewer import build_html, view_summary
+    from epistemic_agent.export.viewer import run_export, view_summary
 
     proj = find_project()
-    kg = proj.load_kg()
-
-    if around:
-        from epistemic_agent.analysis.inspect import build_index, resolve_node
-
-        idx = build_index(kg)
-        seeds, how = resolve_node(idx, around, proj.vocabulary())
-        if not seeds:
-            console.print(f"[red]找不到[/red] {around!r}")
-            raise typer.Exit(1)
-        console.print(f"[dim]中心节点 {len(seeds)} 个（{how}），扩展 {hops} 跳[/dim]")
-        frontier, keep_ids = set(seeds), set(seeds)
-        for _ in range(max(0, hops)):
-            nxt: set[str] = set()
-            for e in kg["edges"]:
-                if e["source"] in frontier:
-                    nxt.add(e["target"])
-                if e["target"] in frontier:
-                    nxt.add(e["source"])
-            nxt -= keep_ids
-            keep_ids |= nxt
-            frontier = nxt
-            if not frontier:
-                break
-        kg = {
-            "nodes": [n for n in kg["nodes"] if n["id"] in keep_ids],
-            "edges": [e for e in kg["edges"]
-                      if e["source"] in keep_ids and e["target"] in keep_ids],
-        }
-        console.print(f"[dim]邻域子图 {len(kg['nodes'])} 节点 / {len(kg['edges'])} 边[/dim]")
-
-    if node_type:
-        keep = {t.strip() for t in node_type.split(",") if t.strip()}
-        unknown = keep - {n["type"] for n in kg["nodes"]}
-        if unknown:
-            console.print(f"[yellow]图里没有这些类型：{', '.join(sorted(unknown))}[/yellow]")
-        kept = [n for n in kg["nodes"] if n["type"] in keep]
-        ids = {n["id"] for n in kept}
-        kg = {
-            "nodes": kept,
-            # 两端都保留才留边，否则会产生悬空引用
-            "edges": [e for e in kg["edges"] if e["source"] in ids and e["target"] in ids],
-        }
-        console.print(f"[dim]已过滤到 {len(kg['nodes'])} 节点 / {len(kg['edges'])} 边[/dim]")
-        if kg["nodes"] and not kg["edges"]:
-            console.print(
-                "[yellow]过滤后一条边都不剩[/yellow] —— 这些类型之间本来就不直连"
-                "（比如 Domain 和 InternalSystem 都只连 Repo）。"
-                "想要连通的子图请用 --around <节点>，或把 Repo 一起保留。"
-            )
-
-    ext = {"html": "html", "graphml": "graphml", "gexf": "gexf",
-           "cypher": "cypher", "dot": "dot"}
-    if fmt not in ext:
-        console.print(f"[red]未知格式 {fmt!r}[/red] — 可选：{', '.join(ext)}")
+    result = run_export(
+        proj, fmt=fmt, output=output, default_view=default_view,
+        node_type=node_type, around=around, hops=hops, keep_sources=keep_sources,
+    )
+    if "error" in result:
+        console.print(f"[red]{result['error']}[/red]")
         raise typer.Exit(1)
-    out = output or (proj.root / f"kg/capability-map.{ext[fmt]}")
+
+    for note in result["notes"]:
+        console.print(f"[dim]{note}[/dim]")
 
     if fmt == "html":
-        rows = view_summary(kg)
+        rows = view_summary(result["kg"])
         from rich.table import Table
 
         t = Table(title="内置视图", title_justify="left", box=None)
@@ -728,27 +550,11 @@ def export(
         for r in rows:
             t.add_row(r["key"], r["name"], str(r["nodes"]), str(r["edges"]), r["desc"])
         console.print(t)
-        text = build_html(kg, title=proj.name, default_view=default_view)
-    else:
-        try:
-            text = WRITERS[fmt](kg) if fmt == "dot" else WRITERS[fmt](kg, keep_sources)
-        except ValueError as exc:
-            console.print(f"[red]{exc}[/red]")
-            raise typer.Exit(1) from exc
 
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(text, encoding="utf-8")
-    size = out.stat().st_size
-    console.print(f"[green]已写入[/green] {out}  ({size / 1024:.0f} KB)")
-
-    tips = {
-        "html": "直接双击打开，或 `xdg-open` / `open`。不依赖网络。",
-        "graphml": "拖进 Gephi / Cytoscape / yEd；或 `networkx.read_graphml()`。",
-        "gexf": "拖进 Gephi（它的原生格式，属性面板更友好）。",
-        "cypher": "`cat 该文件 | cypher-shell -u neo4j -p <密码>`。文件末尾附了示例查询。",
-        "dot": "`dot -Tsvg 该文件 -o out.svg`（或 `neato` / `fdp` 布局更适合网状图）。",
-    }
-    console.print(f"[dim]{tips[fmt]}[/dim]")
+    console.print(
+        f"[green]已写入[/green] {result['output_path']}  ({result['size_bytes'] / 1024:.0f} KB)"
+    )
+    console.print(f"[dim]{result['tip']}[/dim]")
 
 
 # ---------------------------------------------------------------------------
@@ -819,6 +625,44 @@ def ingest(
     console.print(msg)
     for w in s.get("schema_warnings") or []:
         console.print(f"[yellow]SCHEMA[/yellow] {w}")
+
+
+# ---------------------------------------------------------------------------
+# capmap agent
+
+
+@app.command()
+def agent(
+    model: Optional[str] = typer.Option(
+        None, "--model", help="Override the model (default depends on --backend)"
+    ),
+    backend: Optional[str] = typer.Option(
+        None,
+        "--backend",
+        help="anthropic | portkey. Default: portkey if PORTKEY_BASE_URL is set, else anthropic.",
+    ),
+):
+    """Start an interactive, tool-using agent session for this instance.
+
+    A standalone conversational loop — no Claude Code dependency. It reads the
+    same CLAUDE.md a human-operated Claude Code session would, and calls the
+    deterministic tools in `epistemic_agent.agent.tools` itself. Vocabulary
+    finalisation, review-queue resolution, and DUPLICATES edges stay
+    human-only: there is no tool for them, on either backend.
+
+    Two backends: `anthropic` calls the Claude API directly; `portkey` goes
+    through any OpenAI-compatible gateway your organisation runs (Portkey,
+    or a similar proxy in front of Bedrock/Azure/etc.) — see
+    `epistemic_agent.agent.backends.portkey_backend` for the required env
+    vars and your gateway's own onboarding docs for the values.
+    """
+    from epistemic_agent.agent.runtime import run_repl
+
+    try:
+        run_repl(find_project(), model=model, backend=backend)
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1) from exc
 
 
 if __name__ == "__main__":
