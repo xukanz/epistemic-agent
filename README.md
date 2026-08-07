@@ -43,6 +43,9 @@ capmap view duplicates
 
 `instances/acme-corp/` 是一家虚构公司（"Acme Corp"，约 25 个仓库、10 个团队），数据全部是编造的，跑的是和真实验证完全相同的一套流水线。`data/seed.yaml` 里特意埋了几个信号，跑完能在对应视图里直接看到：一对跨团队、同领域、栈高度重合的独立重复投入（`duplicates` 视图的 `independent` 分类），一对同名 fork/副本（`same-name` 分类），几个单团队掌握的技术（`risk` 视图的 bus-factor=1），以及一个大部分仓库都依赖的虚构内部网关（`risk` 视图的内部系统集中度）。跑 [快速开始](#快速开始) 里的 `capmap init` 可以在自己的数据上重复同一条流水线。
 
+- 在线看图谱，不用跑任何命令：**<https://xukanz.github.io/epistemic-agent/>**（`capmap export --format html` 的产物，交互式力导向图，可切换 4 个内置视图）
+- 每个命令实际输出什么，逐条贴真实终端输出：[`instances/acme-corp/README.md`](instances/acme-corp/README.md)
+
 ---
 
 ## 快速开始
