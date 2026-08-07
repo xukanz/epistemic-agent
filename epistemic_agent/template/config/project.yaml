@@ -42,6 +42,29 @@ merge:
     - {type: natural_key, node_type: Repo, key_prop: path}
     - {type: multi_token, node_type: TechStack}
 
+# scripts/bootstrap.py (the generic one this template ships with) reads a flat
+# list of repo records — one entry per repo — described entirely here. Only
+# fill this in when the source really is one-record-per-repo; joining several
+# raw files, parsing a table, or resolving hostnames needs a hand-written
+# script instead (see skills/bootstrap-instance.md).
+# bootstrap:
+#   format: yaml            # yaml | json | csv
+#   file: data/raw/seed.yaml  # path relative to this instance's root
+#   list_key: repos          # top-level key holding the record list (yaml/json only)
+#   noise_filter: true       # drop tokens that look like filenames/placeholders
+#   internal_shard: internal-system  # shard name in vocabulary/ that names internal systems
+#   fields:                  # generic name -> key in each record; only list what differs
+#     path: path              # required — the repo's namespace/path, e.g. "team-a/service-x"
+#     name: name
+#     team: team               # omit to derive the team from the path's first segment
+#     domain: domain
+#     tech: tech                # list, or a comma/slash-separated string
+#     internal_systems: internal_systems
+#     description: description
+#     value: value
+#     last_commit: last_commit
+#     url: url                 # omit rather than guess — don't invent an endpoint
+
 # LLM provider for the optional extraction path (`capmap ingest --llm`).
 # Format: <provider>/<model>, provider ∈ {ollama, claude, openai}
 llm:

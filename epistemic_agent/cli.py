@@ -7,6 +7,7 @@
     capmap review             Open the review queue TUI
     capmap ground <label>     Resolve one label against the vocabulary
     capmap vocab              List vocabulary shards
+    capmap vocab-draft        Cluster ungrounded labels into a draft vocabulary
     capmap view <name>        Coverage / duplicates / gaps / experts / risk
     capmap ingest <payload>   Write a payload into the KG
 
@@ -401,6 +402,63 @@ def vocab():
     for s in v.list_shards():
         t.add_row(s["shard"], s.get("target_type", "?"), str(s["term_count"]), s["label"])
     console.print(t)
+
+
+@app.command("vocab-draft")
+def vocab_draft(
+    payload: Optional[Path] = typer.Argument(
+        None, help="Bootstrap payload JSON to cluster (omit with --from-suggestions)"
+    ),
+    from_suggestions: bool = typer.Option(
+        False, "--from-suggestions", help="Cluster kg/vocabulary-suggestions.md instead"
+    ),
+    fuzzy_threshold: float = typer.Option(0.90, "--fuzzy-threshold"),
+    no_fuzzy: bool = typer.Option(False, "--no-fuzzy", help="Exact clustering only, no fuzzy pass"),
+    out: Optional[Path] = typer.Option(None, "--out", help="Draft output directory"),
+):
+    """Cluster ungrounded labels into a draft vocabulary for human review.
+
+    Deterministic only (exact match + string-similarity clustering, hostnames
+    excluded from fuzzy matching) — never writes to `vocabulary/` and never
+    decides whether a group is real. See `skills/seed-vocabulary.md`.
+    """
+    from epistemic_agent.onto.draft import (
+        build_vocab_draft,
+        labels_from_payload,
+        labels_from_suggestions_md,
+        write_draft_files,
+    )
+
+    proj = find_project()
+    if from_suggestions:
+        if not proj.suggestions_path.exists():
+            console.print(f"[yellow]No suggestions file at {proj.suggestions_path}[/yellow]")
+            raise typer.Exit(1)
+        labels = labels_from_suggestions_md(proj.suggestions_path.read_text())
+    else:
+        if payload is None:
+            console.print("[red]Pass a payload JSON path, or use --from-suggestions[/red]")
+            raise typer.Exit(1)
+        labels = labels_from_payload(json.loads(payload.read_text()))
+
+    if not labels:
+        console.print("[green]Nothing to cluster.[/green]")
+        return
+
+    threshold = None if no_fuzzy else fuzzy_threshold
+    drafts = build_vocab_draft(labels, fuzzy_threshold=threshold)
+    out_dir = out or (proj.root / "kg" / "vocabulary-draft")
+    written = write_draft_files(drafts, out_dir)
+
+    for ntype, draft in drafts.items():
+        console.print(f"{ntype}: {draft['raw_labels']} labels → {draft['clusters']} groups")
+    for p in written:
+        console.print(f"[green]Wrote[/green] {p}")
+    console.print(
+        "[dim]Draft only — not loaded as vocabulary. Review with "
+        "skills/seed-vocabulary.md, then move accepted groups into "
+        "vocabulary/*.yaml and delete the draft.[/dim]"
+    )
 
 
 # ---------------------------------------------------------------------------
