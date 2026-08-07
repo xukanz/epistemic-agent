@@ -1,0 +1,64 @@
+shard: document-data
+target_type: TechStack
+label: 文档处理与科学计算
+description: 文档解析、报告生成、科学与统计计算库
+
+terms:
+  - id: dd:pymupdf
+    label: PyMuPDF
+    aliases: [pymupdf, fitz]
+  - id: dd:pdfplumber
+    label: pdfplumber
+    aliases: [pdfplumber, "camelot-py/pytesseract", camelot-py, pytesseract]
+  - id: dd:python-docx
+    label: python-docx / python-pptx
+    aliases: [python-docx, python-pptx, "docx2txt/python-pptx", docx2txt, officegen,
+              openpyxl, pyreadstat, "pyreadstat/sas7bdat"]
+  - id: dd:reportlab
+    label: PDF 生成
+    aliases: [reportlab, weasyprint, md2pdf, cairosvg, aspose pdf 授权]
+  - id: dd:pandoc
+    label: Pandoc / Quarto
+    aliases: [pandoc, quarto, marp, mkdocs, notebooklm]
+  - id: dd:beautifulsoup
+    label: HTML 解析
+    aliases: [beautifulsoup, bs4, lxml, tree-sitter]
+  - id: dd:jupyter
+    label: Jupyter
+    aliases: [jupyter, jupyter notebook, notebook]
+  - id: dd:scikit-learn
+    label: scikit-learn
+    aliases: [scikit-learn, sklearn, xgboost, scipy]
+  - id: dd:pymc
+    label: 贝叶斯统计
+    aliases: [pymc, arviz, nlmixr2]
+  - id: dd:spacy
+    label: spaCy
+    aliases: [spacy, nltk]
+  - id: dd:rdkit
+    label: RDKit
+    aliases: [rdkit, rdkit-smiles]
+  - id: dd:biopython
+    label: Biopython
+    aliases: [biopython, "pubmed/pubtator", open-targets]
+  - id: dd:genomics-tools
+    label: 基因组学工具链
+    aliases: [gatk, bwa, samtools, fastqc, genebass]
+  - id: dd:workflow-engine
+    label: 科学工作流引擎
+    aliases: [nf-core, nextflow, snakemake, cwl]
+  - id: dd:optuna
+    label: Optuna
+    aliases: [optuna]
+  - id: dd:rapidfuzz
+    label: rapidfuzz
+    aliases: [rapidfuzz, fuzzywuzzy]
+  - id: dd:httpx
+    label: HTTP 客户端
+    aliases: [httpx, requests, aiohttp, axios, urllib3]
+  - id: dd:tenacity
+    label: 重试与退避
+    aliases: [tenacity, backoff, retrying]
+  - id: dd:apscheduler
+    label: 任务调度
+    aliases: [apscheduler, celery, cron]

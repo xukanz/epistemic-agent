@@ -1,0 +1,51 @@
+shard: frontend
+target_type: TechStack
+label: 前端与可视化
+description: 前端框架、UI 库、图表与构建工具
+
+terms:
+  - id: fe:react
+    label: React
+    aliases: [react, reactjs, "react/nginx", "react18/mantine", react-flow]
+  - id: fe:nextjs
+    label: Next.js
+    aliases: [next.js, nextjs, next.js standalone, next-mdx-remote]
+    parent: fe:react
+  - id: fe:vue
+    label: Vue
+    aliases: [vue, vuejs, "vue3/quasar", quasar]
+  - id: fe:angular
+    label: Angular
+    aliases: [angular]
+  - id: fe:svelte
+    label: Svelte / SvelteKit
+    aliases: [svelte, sveltekit, adapter-static]
+  - id: fe:vite
+    label: Vite
+    aliases: [vite, "typescript/vite", unplugin-icons]
+  - id: fe:tailwind
+    label: Tailwind CSS
+    aliases: [tailwind, tailwindcss]
+  - id: fe:mui
+    label: MUI
+    aliases: [mui, material-ui, mantine, "@one/react"]
+  - id: fe:state-mgmt
+    label: 前端状态管理
+    aliases: [zustand, react-zustand, react-query, "tanstack query+zustand",
+              tanstack-query, redux]
+  - id: fe:charts
+    label: 图表库
+    aliases: [chart.js, recharts, plotly, d3, mermaid, "mermaid-py/mermaid-cli",
+              mermaid-cli, puml-c4, plantuml]
+  - id: fe:search-ui
+    label: 前端搜索
+    aliases: [fuse.js, fusejs]
+  - id: fe:typescript
+    label: TypeScript
+    aliases: [typescript, ts, zod]
+  - id: fe:chrome-ext
+    label: Chrome 扩展
+    aliases: [chrome-extension, chrome-mv3, chrome-sidepanel]
+  - id: fe:puppeteer
+    label: Puppeteer / 无头浏览器
+    aliases: [puppeteer, "chromium/puppeteer", chromium, playwright-browser]

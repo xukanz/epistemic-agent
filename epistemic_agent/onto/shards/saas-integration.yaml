@@ -1,0 +1,65 @@
+shard: saas-integration
+target_type: TechStack
+label: SaaS 与外部系统集成
+description: |
+  公有 SaaS 与商用平台的集成。与 InternalSystem 的界线：
+  这里的东西外部机构自己开账号就能用，因此只是「换账号」；
+  真正只在本机构存在、外部无可替代的，归实例自带的 internal-system 分片。
+
+terms:
+  - id: si:atlassian
+    label: Jira / Confluence
+    aliases: [jira, confluence, atlassian, mcp-atlassian, jira mcp]
+  - id: si:google-workspace
+    label: Google Workspace
+    aliases: [google drive, google-drive, gdrive-api, google drive api,
+              google-api-python-client, google slides, google-slides, gmail api,
+              gspread]
+  - id: si:apps-script
+    label: Google Apps Script
+    aliases: [apps-script-api, google apps script, apps script, gas]
+  - id: si:airtable
+    label: Airtable
+    aliases: [airtable, pyairtable]
+  - id: si:monday
+    label: Monday.com
+    aliases: [monday.com api, monday]
+  - id: si:servicenow
+    label: ServiceNow
+    aliases: [servicenow]
+  - id: si:slack
+    label: Slack
+    aliases: [slack, slack api]
+  - id: si:dialogflow
+    label: Dialogflow
+    aliases: [dialogflow]
+  - id: si:posit
+    label: Posit Connect
+    aliases: [posit connect, posit-connect, rsconnect]
+  - id: si:camunda
+    label: Camunda / BPMN
+    aliases: [camunda, "bpmn/camunda", bpmn, camunda 引擎]
+  - id: si:arvados
+    label: Arvados
+    aliases: [arvados, arvados sdk]
+  - id: si:kubeflow
+    label: Kubeflow
+    aliases: [kubeflow]
+  - id: si:dataiku
+    label: Dataiku
+    aliases: [dataiku]
+  - id: si:palantir
+    label: Palantir Foundry
+    aliases: [palantir-foundry, palantir, palantir-mcp]
+  - id: si:benchling
+    label: Benchling
+    aliases: [benchling-sdk, benchling]
+  - id: si:sap
+    label: SAP CAP
+    aliases: [sap cap, "sap cap(@sap/cds)", "@sap/cds"]
+  - id: si:mirth
+    label: Mirth Connect
+    aliases: [mirth connect, mirth]
+  - id: si:autoit
+    label: AutoIt
+    aliases: [autoit]

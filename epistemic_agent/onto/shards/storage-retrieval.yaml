@@ -1,0 +1,84 @@
+shard: storage-retrieval
+target_type: TechStack
+label: 存储与检索
+description: 数据库、向量库、搜索引擎、数据处理库
+
+terms:
+  - id: sr:postgresql
+    label: PostgreSQL
+    aliases: [postgresql, postgres, psycopg2, aurora serverless v2, aurora, pgserver,
+              "postgresql(omop)", sqlalchemy]
+  - id: sr:pgvector
+    label: pgvector
+    aliases: [pgvector]
+    parent: sr:postgresql
+  - id: sr:mongodb
+    label: MongoDB
+    aliases: [mongodb, pymongo, mongodb-atlas, beanie, mongodb-mcp-server]
+  - id: sr:documentdb
+    label: AWS DocumentDB
+    aliases: [documentdb]
+  - id: sr:duckdb
+    label: DuckDB
+    aliases: [duckdb, duckdb fts]
+  - id: sr:sqlite
+    label: SQLite
+    aliases: [sqlite, better-sqlite3, "hana/sqlite", sqlite-vss,
+              langgraph-checkpoint-sqlite]
+  - id: sr:redis
+    label: Redis
+    aliases: [redis]
+  - id: sr:snowflake
+    label: Snowflake
+    aliases: [snowflake, snowflake-connector]
+  - id: sr:oracle
+    label: Oracle
+    aliases: [oracle]
+  - id: sr:dynamodb
+    label: DynamoDB
+    aliases: [dynamodb]
+  - id: sr:redshift
+    label: Redshift
+    aliases: [redshift]
+  - id: sr:elasticsearch
+    label: Elasticsearch
+    aliases: [elasticsearch, elastic]
+  - id: sr:opensearch
+    label: OpenSearch
+    aliases: [opensearch, opensearch-py]
+  - id: sr:qdrant
+    label: Qdrant
+    aliases: [qdrant]
+  - id: sr:chromadb
+    label: ChromaDB
+    aliases: [chromadb, chroma]
+  - id: sr:milvus
+    label: Milvus
+    aliases: [milvus]
+  - id: sr:faiss
+    label: FAISS
+    aliases: [faiss, faiss-cpu]
+  - id: sr:neo4j
+    label: Neo4j
+    aliases: [neo4j, graphdb, sparql]
+  - id: sr:azure-ai-search
+    label: Azure AI Search
+    aliases: [azure-ai-search, azure ai search, azure-search-documents]
+  - id: sr:s3
+    label: AWS S3
+    aliases: [s3, aws s3, minio-client, minio, cloudpathlib, awswrangler]
+  - id: sr:pandas
+    label: pandas
+    aliases: [pandas, "pandas/openpyxl", "pandas/statsmodels"]
+  - id: sr:polars
+    label: Polars
+    aliases: [polars]
+  - id: sr:pyarrow
+    label: PyArrow
+    aliases: [pyarrow, parquet]
+  - id: sr:rabbitmq
+    label: RabbitMQ
+    aliases: [rabbitmq]
+  - id: sr:liquibase
+    label: Liquibase
+    aliases: [liquibase]

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>__CAPMAP_TITLE__</title>
+<style>
+  :root{
+    --bg:#12151a; --panel:#1a1f27; --line:#2a313c;
+    --fg:#e6e9ef; --dim:#8b95a5; --accent:#4C8BF5;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;
+    font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",
+      "PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--fg)}
+  #app{display:flex;height:100%}
+  #stage{flex:1;position:relative;min-width:0}
+  canvas{display:block;width:100%;height:100%;cursor:grab}
+  canvas.dragging{cursor:grabbing}
+
+  #side{width:320px;flex:none;background:var(--panel);
+    border-left:1px solid var(--line);display:flex;flex-direction:column}
+  #side h1{font-size:14px;margin:0;padding:14px 16px 10px;
+    border-bottom:1px solid var(--line);font-weight:600}
+  .sec{padding:12px 16px;border-bottom:1px solid var(--line)}
+  .sec h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--dim);margin:0 0 8px;font-weight:600}
+
+  select,input,button{font:inherit;color:var(--fg);background:#222834;
+    border:1px solid var(--line);border-radius:5px;padding:6px 8px;width:100%}
+  button{cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  .row{display:flex;gap:6px;margin-top:6px}
+  .hint{color:var(--dim);font-size:11px;margin-top:6px;line-height:1.45}
+
+  .legend label{display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer}
+  .legend input{width:auto;margin:0}
+  .sw{width:11px;height:11px;border-radius:3px;flex:none}
+  .cnt{margin-left:auto;color:var(--dim);font-variant-numeric:tabular-nums}
+
+  #detail{flex:1;overflow-y:auto;padding:12px 16px}
+  #detail .empty{color:var(--dim);font-size:12px;padding-top:8px}
+  #detail .ttl{font-size:15px;font-weight:600;margin-bottom:2px;word-break:break-word}
+  #detail .sub{color:var(--dim);font-size:11px;margin-bottom:10px;word-break:break-all}
+  #detail dl{margin:0;display:grid;grid-template-columns:82px 1fr;gap:4px 10px}
+  #detail dt{color:var(--dim);font-size:11px}
+  #detail dd{margin:0;font-size:12px;word-break:break-word}
+  #detail .nb{margin-top:12px}
+  #detail .nb div{padding:3px 0;border-top:1px solid var(--line);cursor:pointer;font-size:12px}
+  #detail .nb div:hover{color:var(--accent)}
+
+  #tip{position:absolute;pointer-events:none;background:#0d1015ee;
+    border:1px solid var(--line);border-radius:5px;padding:5px 9px;
+    font-size:12px;display:none;max-width:300px;z-index:5}
+  #status{position:absolute;left:12px;bottom:10px;color:var(--dim);
+    font-size:11px;font-variant-numeric:tabular-nums}
+  #viewdesc{position:absolute;left:12px;top:10px;color:var(--dim);font-size:11px;
+    max-width:60%}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="viewdesc"></div>
+    <div id="tip"></div>
+    <div id="status"></div>
+  </div>
+
+  <div id="side">
+    <h1>__CAPMAP_TITLE__</h1>
+
+    <div class="sec">
+      <h2>视图</h2>
+      <select id="view"></select>
+      <div class="row">
+        <button id="relayout">重新布局</button>
+        <button id="fit">适应窗口</button>
+      </div>
+      <div class="hint">拖拽平移 · 滚轮缩放 · 点节点看详情 · 拖节点可固定</div>
+    </div>
+
+    <div class="sec">
+      <h2>搜索</h2>
+      <input id="q" placeholder="输入名字的一部分…" autocomplete="off">
+      <div class="hint" id="qhint"></div>
+    </div>
+
+    <div class="sec">
+      <h2>节点类型</h2>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div id="detail"><div class="empty">点一个节点看详情。</div></div>
+  </div>
+</div>
+
+<script>
+const DATA = "__CAPMAP_DATA__";
+
+/* ---------- 状态 ---------- */
+let view, nodes, edges, colors = DATA.colors;
+let hidden = new Set();          // 被过滤掉的类型
+let cam = {x:0, y:0, k:1};
+let selected = null, hover = null, highlight = new Set();
+let ticks = 0, running = false, dragNode = null;
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const tip = document.getElementById('tip');
+
+/* ---------- 力导向布局 ----------
+   两个关键点，缺一个就会一直抖：
+
+   1) 退火（alpha 衰减）。所有力都乘 alpha，alpha 从 1 指数衰减到 0。
+      没有它，力每帧以满强度重新施加，节点永远在平衡点附近震荡不收敛。
+      这是 d3-force 的做法，参数也照抄它的默认值。
+   2) 斥力封顶。两个节点重叠时 d² 趋近 0，REPULSION/d² 会爆到几万，
+      只靠限速压不住——节点会持续以最大速度弹开再被拉回。
+
+   排斥力用网格近似：只和相邻 9 格里的节点算，把 O(n²) 压到 O(n·k)。
+   900 个节点跑 O(n²) 每帧 81 万次会卡；网格近似后几千次。 */
+// REPULSION 用的公式和 d3-force 的 manyBody 一样（vx += dx * k/d²），
+// 所以量级也该和它的默认强度 30 同一个数量级，不是几百。
+const REPULSION = 140, SPRING = 0.09, CENTER = 0.0015;
+const LINK_DIST = 45;            // 弹簧的静止长度
+const VELOCITY_DECAY = 0.6;      // 每帧保留的速度比例（d3 的 1 - velocityDecay）
+const ALPHA_DECAY = 0.0228;      // d3 默认：300 帧后 alpha 降到 0.001
+const ALPHA_MIN = 0.005;         // 低于此值认为收敛，停止模拟
+const MIN_DIST2 = 100;           // 距离平方下限（10px）：把单对最大贡献压到 14px
+const MAX_SPEED = 30;            // 仅防止第一帧被甩出视野，收敛后不会触发
+
+let alpha = 1;
+
+/** 节点半径。碰撞力和渲染都要用，所以定义在布局之前。 */
+function radius(nd){ return 3 + Math.min(11, Math.sqrt(nd.d||1)*1.7); }
+
+function layoutStep(){
+  const n = nodes.length;
+  if(!n || alpha < ALPHA_MIN){
+    if(running){ running = false; fit(); }   // 收敛后重新取景（外圈在加载时就摆好了）
+    return;
+  }
+  alpha += (0 - alpha) * ALPHA_DECAY;
+
+  const cell = 60, grid = new Map();
+  for(const nd of nodes){
+    const k = ((nd.x/cell)|0) + ',' + ((nd.y/cell)|0);
+    let b = grid.get(k);
+    if(!b) grid.set(k, b = []);
+    b.push(nd);
+  }
+
+  for(const a of nodes){
+    if(a.fixed) continue;
+    const gx = (a.x/cell)|0, gy = (a.y/cell)|0;
+    for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++){
+      const bucket = grid.get((gx+dx)+','+(gy+dy));
+      if(!bucket) continue;
+      for(const b of bucket){
+        if(a === b) continue;
+        let ddx = a.x-b.x, ddy = a.y-b.y;
+        let d2 = ddx*ddx + ddy*ddy;
+        if(d2 < MIN_DIST2){
+          // 完全重合时给一个确定性的偏移。量级必须和 MIN_DIST2 相当：
+          // 早先这里写的是 ddx = a.i - b.i（索引差，可能上百），
+          // 于是"分开重叠节点"变成了把它们对着甩出去。
+          if(d2 === 0){
+            const sgn = ((a.i - b.i) & 1) ? 1 : -1;
+            ddx = sgn * 7; ddy = 7;
+          }
+          d2 = MIN_DIST2;
+        }
+        const f = REPULSION / d2;
+        a.vx += ddx*f*alpha; a.vy += ddy*f*alpha;
+
+        // 碰撞：按渲染半径直接把重叠的推开。
+        // 这件事调斥力参数是治不好的——斥力管的是全局疏密，
+        // 而「两个圆不许叠在一起」是个几何约束，直接改位置最省事。
+        // 不乘 alpha：退火到后期斥力几乎没了，但圆该不叠还是不能叠。
+        const rr = radius(a) + radius(b) + 2;
+        if(d2 < rr*rr){
+          const dist = Math.sqrt(d2) || 1;
+          const push = (rr - dist) / dist * 0.5;
+          a.x += ddx*push; a.y += ddy*push;
+          if(!b.fixed){ b.x -= ddx*push; b.y -= ddy*push; }
+        }
+      }
+    }
+  }
+
+  // 弹簧必须有静止长度。静止长度为 0 的弹簧会主动把相连节点拉到重合——
+  // 一个 47 度的枢纽节点会把 47 个邻居全吸到自己身上，斥力压不住。
+  // d3-force 的 link 力默认目标距离是 30，同理。
+  for(const e of edges){
+    const a = nodes[e.s], b = nodes[e.t];
+    if(!a || !b) continue;
+    const rx = b.x-a.x, ry = b.y-a.y;
+    const d = Math.hypot(rx, ry) || 1;
+    const f = (d - LINK_DIST) / d * SPRING * alpha;
+    const dx = rx*f, dy = ry*f;
+    if(!a.fixed){ a.vx += dx; a.vy += dy; }
+    if(!b.fixed){ b.vx -= dx; b.vy -= dy; }
+  }
+
+  for(const a of nodes){
+    if(a.fixed){ a.vx = a.vy = 0; continue; }
+    a.vx -= a.x*CENTER*alpha; a.vy -= a.y*CENTER*alpha;
+    a.vx *= VELOCITY_DECAY; a.vy *= VELOCITY_DECAY;
+    const sp = Math.hypot(a.vx, a.vy);
+    if(sp > MAX_SPEED){ a.vx = a.vx/sp*MAX_SPEED; a.vy = a.vy/sp*MAX_SPEED; }
+    a.x += a.vx; a.y += a.vy;
+  }
+  ticks++;
+}
+
+/** 重新加热。拖动节点时轻微加热即可，整体重排才回到 1。 */
+function reheat(to){ alpha = Math.max(alpha, to); running = true; }
+
+/** 把孤立节点（度数 0）摆成主图外面的一圈，并排除出模拟。
+
+    它们没有边，力学上只剩斥力和向心力；而斥力有 180px 的网格截断，
+    一旦彼此拉开就再也感觉不到对方，于是向心力把它们**全部拉到原点同一个点**。
+    全图视图里 102 个 Untyped 节点就是这么叠成一坨的。
+    与其调参，不如承认它们没有拓扑位置可言，确定性地摆一圈——
+    主流图工具也是这么处理孤立点的，而且看起来是有意为之。 */
+function placeIsolated(){
+  const iso = nodes.filter(n => !n.d);
+  if(!iso.length) return;
+  const conn = nodes.filter(n => n.d).length;
+  // 半径由**节点数**推算，不看当前坐标。早先是按主图当前包围盒算、
+  // 并在收敛那一刻重摆一次，结果就是布局停下来的瞬间上百个节点集体瞬移，
+  // 看起来就像图突然炸了一下。经验值：主图收敛半径 ≈ 26~31 × √n。
+  let R = 32 * Math.sqrt(conn) + 80;
+  // 也要够大，免得圈上的节点自己挤在一起
+  R = Math.max(R, iso.length * 9 / (2 * Math.PI));
+  iso.forEach((n, i) => {
+    const a = (i / iso.length) * Math.PI * 2;
+    n.x = Math.cos(a) * R; n.y = Math.sin(a) * R;
+    n.vx = n.vy = 0; n.fixed = true;
+  });
+}
+
+/* ---------- 渲染 ---------- */
+function visible(nd){ return !hidden.has(nd.t); }
+
+function draw(){
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if(cv.width !== w*dpr || cv.height !== h*dpr){
+    cv.width = w*dpr; cv.height = h*dpr;
+  }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  ctx.save();
+  ctx.translate(w/2 + cam.x, h/2 + cam.y);
+  ctx.scale(cam.k, cam.k);
+
+  // 边
+  ctx.lineWidth = 0.6/cam.k;
+  ctx.strokeStyle = 'rgba(140,155,175,.22)';
+  ctx.beginPath();
+  for(const e of edges){
+    const a = nodes[e.s], b = nodes[e.t];
+    if(!a || !b || !visible(a) || !visible(b)) continue;
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+  }
+  ctx.stroke();
+
+  // 选中节点的边高亮
+  if(selected){
+    ctx.lineWidth = 1.6/cam.k;
+    ctx.strokeStyle = 'rgba(76,139,245,.85)';
+    ctx.beginPath();
+    for(const e of edges){
+      if(e.s !== selected.i && e.t !== selected.i) continue;
+      const a = nodes[e.s], b = nodes[e.t];
+      if(!a || !b || !visible(a) || !visible(b)) continue;
+      ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    }
+    ctx.stroke();
+  }
+
+  // 节点
+  for(const nd of nodes){
+    if(!visible(nd)) continue;
+    const r = radius(nd);
+    ctx.beginPath();
+    ctx.arc(nd.x, nd.y, r, 0, 6.284);
+    ctx.fillStyle = colors[view.types[nd.t]] || '#9E9E9E';
+    ctx.globalAlpha = (highlight.size && !highlight.has(nd.i)) ? 0.15 : 1;
+    ctx.fill();
+    if(nd === selected || nd === hover){
+      ctx.lineWidth = 2/cam.k; ctx.strokeStyle = '#fff'; ctx.stroke();
+    } else if(highlight.has(nd.i)){
+      ctx.lineWidth = 1.5/cam.k; ctx.strokeStyle = '#fff'; ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // 标签：只在放大到一定程度、或节点足够重要时画，否则会糊成一片
+  const showAll = cam.k > 1.4;
+  ctx.fillStyle = '#dfe4ec';
+  ctx.font = `${11/cam.k}px sans-serif`;
+  ctx.textAlign = 'center';
+  for(const nd of nodes){
+    if(!visible(nd)) continue;
+    const important = nd === selected || nd === hover || highlight.has(nd.i);
+    if(!important && !(showAll || nd.d >= 12)) continue;
+    if(highlight.size && !highlight.has(nd.i) && !important) continue;
+    ctx.fillText(nd.l, nd.x, nd.y - radius(nd) - 3/cam.k);
+  }
+  ctx.restore();
+
+  document.getElementById('status').textContent =
+    `${nodes.filter(visible).length} 节点 · ${edges.length} 边 · `
+    + (running ? `布局中 ${ticks} 帧（α=${alpha.toFixed(3)}）` : `已稳定（${ticks} 帧）`)
+    + ` · 缩放 ${cam.k.toFixed(2)}×`;
+}
+
+function loop(){
+  if(running){
+    for(let i=0;i<2;i++) layoutStep();
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 视图切换 ---------- */
+function loadView(key){
+  view = DATA.views[key];
+  const R = Math.max(160, Math.sqrt(view.nodes.length) * 42);
+  nodes = view.nodes.map(n => {
+    const a = Math.random()*6.283, r = Math.sqrt(Math.random())*R;
+    return {...n, x: Math.cos(a)*r, y: Math.sin(a)*r, vx:0, vy:0, fixed:false};
+  });
+  edges = view.edges;
+  hidden = new Set(); selected = null; highlight = new Set(); ticks = 0;
+  alpha = 1; running = true;
+  placeIsolated();
+  document.getElementById('viewdesc').textContent = view.desc;
+  document.getElementById('detail').innerHTML =
+    '<div class="empty">点一个节点看详情。</div>';
+  buildLegend();
+  fit();
+}
+
+function buildLegend(){
+  const counts = {};
+  for(const n of nodes) counts[n.t] = (counts[n.t]||0)+1;
+  const box = document.getElementById('legend');
+  box.innerHTML = '';
+  view.types.forEach((t,i) => {
+    if(!counts[i]) return;
+    const lab = document.createElement('label');
+    lab.innerHTML =
+      `<input type="checkbox" checked data-t="${i}">
+       <span class="sw" style="background:${colors[t]||'#9E9E9E'}"></span>
+       <span>${t}</span><span class="cnt">${counts[i]}</span>`;
+    lab.querySelector('input').onchange = ev => {
+      const k = +ev.target.dataset.t;
+      ev.target.checked ? hidden.delete(k) : hidden.add(k);
+    };
+    box.appendChild(lab);
+  });
+}
+
+function fit(){
+  const vis = nodes.filter(visible);
+  if(!vis.length) return;
+  const xs = vis.map(n=>n.x), ys = vis.map(n=>n.y);
+  const minX=Math.min(...xs), maxX=Math.max(...xs);
+  const minY=Math.min(...ys), maxY=Math.max(...ys);
+  const w = cv.clientWidth, h = cv.clientHeight;
+  cam.k = Math.min(w/(maxX-minX+120), h/(maxY-minY+120), 3);
+  cam.x = -((minX+maxX)/2)*cam.k;
+  cam.y = -((minY+maxY)/2)*cam.k;
+}
+
+/* ---------- 交互 ---------- */
+function toWorld(px, py){
+  const r = cv.getBoundingClientRect();
+  return {
+    x: (px - r.left - cv.clientWidth/2 - cam.x)/cam.k,
+    y: (py - r.top - cv.clientHeight/2 - cam.y)/cam.k
+  };
+}
+function pick(px, py){
+  const p = toWorld(px, py);
+  let best = null, bd = 1e9;
+  for(const nd of nodes){
+    if(!visible(nd)) continue;
+    const d = Math.hypot(nd.x-p.x, nd.y-p.y);
+    if(d < radius(nd)+4/cam.k && d < bd){ best = nd; bd = d; }
+  }
+  return best;
+}
+
+let panning = false, last = null, moved = false;
+cv.addEventListener('mousedown', ev => {
+  const hit = pick(ev.clientX, ev.clientY);
+  moved = false;
+  if(hit){ dragNode = hit; hit.fixed = true; }
+  else { panning = true; cv.classList.add('dragging'); }
+  last = {x:ev.clientX, y:ev.clientY};
+});
+window.addEventListener('mousemove', ev => {
+  if(dragNode){
+    const p = toWorld(ev.clientX, ev.clientY);
+    dragNode.x = p.x; dragNode.y = p.y; dragNode.vx = dragNode.vy = 0;
+    moved = true; reheat(0.3);
+    return;
+  }
+  if(panning && last){
+    cam.x += ev.clientX-last.x; cam.y += ev.clientY-last.y;
+    last = {x:ev.clientX, y:ev.clientY}; moved = true;
+    return;
+  }
+  const hit = pick(ev.clientX, ev.clientY);
+  hover = hit;
+  if(hit){
+    tip.style.display='block';
+    tip.style.left=(ev.clientX+14)+'px';
+    tip.style.top=(ev.clientY+14)+'px';
+    tip.innerHTML = `<b>${esc(hit.l)}</b><br><span style="color:#8b95a5">
+      ${esc(view.types[hit.t])} · ${hit.d} 条边</span>`;
+  } else tip.style.display='none';
+});
+window.addEventListener('mouseup', ev => {
+  if(dragNode && !moved){ select(dragNode); }
+  if(dragNode) dragNode = null;
+  if(panning && !moved){ select(pick(ev.clientX, ev.clientY)); }
+  panning = false; last = null; cv.classList.remove('dragging');
+});
+cv.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const f = ev.deltaY < 0 ? 1.12 : 1/1.12;
+  const r = cv.getBoundingClientRect();
+  const mx = ev.clientX-r.left-cv.clientWidth/2, my = ev.clientY-r.top-cv.clientHeight/2;
+  cam.x = mx - (mx-cam.x)*f; cam.y = my - (my-cam.y)*f;
+  cam.k *= f;
+}, {passive:false});
+cv.addEventListener('dblclick', ev => {
+  const hit = pick(ev.clientX, ev.clientY);
+  if(hit){ hit.fixed = false; reheat(0.3); }
+});
+
+function esc(s){
+  return String(s).replace(/[&<>"]/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function select(nd){
+  selected = nd;
+  const box = document.getElementById('detail');
+  if(!nd){ box.innerHTML = '<div class="empty">点一个节点看详情。</div>'; return; }
+
+  const nbrs = [];
+  for(const e of edges){
+    if(e.s === nd.i) nbrs.push([nodes[e.t], view.edgeTypes[e.y], '→']);
+    else if(e.t === nd.i) nbrs.push([nodes[e.s], view.edgeTypes[e.y], '←']);
+  }
+  nbrs.sort((a,b)=> (b[0]?.d||0)-(a[0]?.d||0));
+
+  let html = `<div class="ttl">${esc(nd.l)}</div>
+    <div class="sub">${esc(view.types[nd.t])} · ${esc(nd.id)}</div><dl>`;
+  for(const [k,v] of Object.entries(nd.p || {})){
+    if(k === 'label') continue;
+    let val = esc(v);
+    if(k === 'url') val = `<a href="${esc(v)}" target="_blank"
+      style="color:#4C8BF5">${esc(String(v).slice(0,44))}…</a>`;
+    html += `<dt>${esc(k)}</dt><dd>${val}</dd>`;
+  }
+  html += `</dl><div class="nb"><h2 style="font-size:11px;color:#8b95a5;
+    text-transform:uppercase;letter-spacing:.08em;margin:14px 0 4px">
+    邻居 ${nbrs.length}</h2>`;
+  for(const [o, et, dir] of nbrs.slice(0, 60)){
+    if(!o) continue;
+    html += `<div data-i="${o.i}"><span style="color:#8b95a5">${dir} ${esc(et)}</span>
+      &nbsp;${esc(o.l)}</div>`;
+  }
+  if(nbrs.length > 60) html += `<div style="color:#8b95a5">… 另 ${nbrs.length-60} 个</div>`;
+  html += '</div>';
+  box.innerHTML = html;
+  box.querySelectorAll('.nb div[data-i]').forEach(d => {
+    d.onclick = () => {
+      const t = nodes[+d.dataset.i];
+      if(t){ select(t); cam.x = -t.x*cam.k; cam.y = -t.y*cam.k; }
+    };
+  });
+}
+
+/* ---------- 搜索 ---------- */
+document.getElementById('q').addEventListener('input', ev => {
+  const q = ev.target.value.trim().toLowerCase();
+  highlight = new Set();
+  if(q.length >= 2){
+    for(const nd of nodes){
+      if(nd.l.toLowerCase().includes(q) || nd.id.toLowerCase().includes(q))
+        highlight.add(nd.i);
+    }
+  }
+  document.getElementById('qhint').textContent =
+    q.length < 2 ? '至少 2 个字符' : `命中 ${highlight.size} 个`;
+  if(highlight.size === 1){
+    const t = nodes.find(n => highlight.has(n.i));
+    if(t){ select(t); cam.x = -t.x*cam.k; cam.y = -t.y*cam.k; }
+  }
+});
+
+/* ---------- 启动 ---------- */
+const sel = document.getElementById('view');
+for(const [k, v] of Object.entries(DATA.views)){
+  const o = document.createElement('option');
+  o.value = k;
+  o.textContent = `${v.name}（${v.nodes.length} 节点 / ${v.edges.length} 边）`;
+  sel.appendChild(o);
+}
+sel.value = DATA.defaultView;
+sel.onchange = () => loadView(sel.value);
+document.getElementById('relayout').onclick = () => {
+  for(const nd of nodes){ if(nd.d) nd.fixed = false; }
+  ticks = 0; alpha = 1; running = true;
+  placeIsolated();
+};
+document.getElementById('fit').onclick = fit;
+window.addEventListener('resize', draw);
+
+loadView(DATA.defaultView);
+loop();
+</script>
+</body>
+</html>

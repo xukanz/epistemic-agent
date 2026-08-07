@@ -1,0 +1,60 @@
+shard: web-service
+target_type: TechStack
+label: 服务端与交互界面
+description: Web 框架、应用服务器、数据应用界面
+
+terms:
+  - id: ws:fastapi
+    label: FastAPI
+    aliases: [fastapi, "fastapi/flask", "fastapi+sse-starlette"]
+  - id: ws:flask
+    label: Flask
+    aliases: [flask]
+  - id: ws:django
+    label: Django
+    aliases: [django]
+  - id: ws:express
+    label: Express
+    aliases: [express, expressjs]
+  - id: ws:spring-boot
+    label: Spring Boot
+    aliases: [spring-boot, springboot, "java/spring", spring]
+  - id: ws:uvicorn
+    label: Uvicorn
+    aliases: [uvicorn]
+  - id: ws:gunicorn
+    label: Gunicorn
+    aliases: [gunicorn]
+  - id: ws:nginx
+    label: Nginx
+    aliases: [nginx, "react/nginx", ingress-nginx]
+  - id: ws:streamlit
+    label: Streamlit
+    aliases: [streamlit]
+  - id: ws:chainlit
+    label: Chainlit
+    aliases: [chainlit]
+  - id: ws:gradio
+    label: Gradio
+    aliases: [gradio]
+  - id: ws:nicegui
+    label: NiceGUI
+    aliases: [nicegui]
+  - id: ws:dash
+    label: Dash
+    aliases: [dash]
+  - id: ws:shiny
+    label: R Shiny
+    aliases: [shiny, r shiny]
+  - id: ws:plumber
+    label: R Plumber
+    aliases: [plumber]
+  - id: ws:open-webui
+    label: Open WebUI
+    aliases: [open-webui, open webui]
+  - id: ws:mangum
+    label: Mangum
+    aliases: [mangum, aws-lambda-adapter]
+  - id: ws:tkinter
+    label: Tkinter
+    aliases: [tkinter]

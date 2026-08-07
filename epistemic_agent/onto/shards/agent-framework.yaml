@@ -1,0 +1,74 @@
+shard: agent-framework
+target_type: TechStack
+label: Agent 框架与编排
+description: 构建 agent、多 agent 编排、工作流图的框架与库
+
+terms:
+  - id: af:langgraph
+    label: LangGraph
+    aliases: [langgraph, lang-graph, langgraph-checkpoint, langgraph-checkpoint-sqlite,
+              langgraph-checkpoint-postgres, langgraph-cli, langgraph-sdk]
+  - id: af:langgraph-supervisor
+    label: LangGraph Supervisor
+    aliases: [langgraph-supervisor, supervisor 编排]
+    parent: af:langgraph
+  - id: af:langgraph-swarm
+    label: LangGraph Swarm
+    aliases: [langgraph-swarm]
+    parent: af:langgraph
+  - id: af:langchain
+    label: LangChain
+    aliases: [langchain, langchain-core, langchain-community, langchain-openai,
+              langchain-anthropic, langchain-aws, langchain-google-genai,
+              langchain-mcp-adapters, 多 provider langchain, langchain-text-splitters]
+  - id: af:llamaindex
+    label: LlamaIndex
+    aliases: [llamaindex, llama-index, llama_index]
+  - id: af:crewai
+    label: CrewAI
+    aliases: [crewai, crew-ai]
+  - id: af:autogen
+    label: AutoGen
+    aliases: [autogen, pyautogen, autogen-agentchat, autogen-core]
+  - id: af:strands
+    label: AWS Strands Agents
+    aliases: [strands, strands-agents, aws strands, bedrock/strands, strands-agents-tools]
+  - id: af:deepagents
+    label: DeepAgents
+    aliases: [deepagents, deep-agents]
+  - id: af:pydantic-ai
+    label: Pydantic AI
+    aliases: [pydantic-ai, pydanticai]
+  - id: af:openai-agents
+    label: OpenAI Agents SDK
+    aliases: [openai-agents, openai-agents-sdk]
+  - id: af:agentkit
+    label: OpenAI AgentKit
+    aliases: [agentkit, openai agentkit]
+  - id: af:claude-agent-sdk
+    label: Claude Agent SDK
+    aliases: [claude-agent-sdk, anthropic-agent-sdk]
+  - id: af:google-adk
+    label: Google ADK
+    aliases: [google-adk, google adk/genai, adk]
+  - id: af:semantic-kernel
+    label: Semantic Kernel
+    aliases: [semantic-kernel, semantic kernel]
+  - id: af:dspy
+    label: DSPy
+    aliases: [dspy]
+  - id: af:agno
+    label: Agno
+    aliases: [agno, phidata]
+  - id: af:langmem
+    label: LangMem
+    aliases: [langmem]
+  - id: af:copilotkit
+    label: CopilotKit
+    aliases: [copilotkit, ag-ui, agui]
+  - id: af:paper-qa
+    label: PaperQA
+    aliases: [paper-qa, paperqa, paperqa-bio]
+  - id: af:kagent
+    label: kagent
+    aliases: [kagent]

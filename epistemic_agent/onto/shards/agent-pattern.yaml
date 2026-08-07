@@ -1,0 +1,71 @@
+shard: agent-pattern
+target_type: Pattern
+label: Agent 架构模式
+description: |
+  这个分片接的不是 TechStack 而是 Pattern 节点。技术栈说明「用了什么」，
+  模式说明「怎么用的」——后者才是管理层想知道的可复用做法。
+  模式无法从依赖清单抽取，只能从 README / 项目描述里抽，
+  因此这个分片主要服务 LLM 抽取路径（capmap ingest --llm）。
+
+terms:
+  - id: ap:supervisor-routing
+    label: Supervisor 路由
+    aliases: [supervisor, supervisor 编排, 路由分支, router, 意图路由, 状态机路由]
+  - id: ap:fan-out
+    label: 专家 Agent 并行 fan-out
+    aliases: [fan-out, fanout, 并行专家, 多 agent 并行, parallel agents]
+  - id: ap:human-in-the-loop
+    label: 人工接管 / HITL 门禁
+    aliases: [hitl, human-in-the-loop, 人机协作, hitl 门禁, 人工接管, 审查队列]
+  - id: ap:rag
+    label: RAG 检索增强
+    aliases: [rag, 检索增强, retrieval augmented, 向量检索, 混合检索, hybrid search]
+  - id: ap:graph-rag
+    label: 结构化知识检索
+    aliases: [graphrag, graph-rag, 知识图谱检索, kg 检索]
+    parent: ap:rag
+  - id: ap:react-loop
+    label: ReAct 工具循环
+    aliases: [react-loop, reason-act, 工具调用循环, tool calling loop, react 循环]
+  - id: ap:structured-output
+    label: Schema 约束结构化输出
+    aliases: [structured output, 结构化输出, schema 约束, pydantic 校验, json mode]
+  - id: ap:nl2sql
+    label: 自然语言转查询
+    aliases: [nl2sql, "nl→sql", "nl→mql", text-to-sql, 自然语言查询]
+  - id: ap:sandbox-exec
+    label: 沙箱执行生成代码
+    aliases: [沙箱, sandbox, 代码执行, code execution, 容器沙盒]
+  - id: ap:adversarial-review
+    label: 对抗式多模型评审
+    aliases: [对抗式评审, adversarial review, 多模型评审, 交叉验证, judge panel]
+  - id: ap:checkpointing
+    label: 会话持久化 / 断点续跑
+    aliases: [checkpointer, checkpoint, 断点续跑, resume, 会话持久化]
+  - id: ap:incremental-sync
+    label: 增量同步与幂等摄取
+    aliases: [增量同步, incremental, 幂等, idempotent, manifest 幂等, 断点续传]
+  - id: ap:provider-switch
+    label: 多提供商可切换
+    aliases: [多 provider, provider 切换, 模型可切换, multi-provider, 一键切换]
+  - id: ap:dry-run
+    label: dry-run 预演
+    aliases: [dry-run, dry run, 预演, 预览模式]
+  - id: ap:eval-harness
+    label: 评测流水线
+    aliases: [评测, eval, benchmark, 基准, 金标准对比, 打分]
+  - id: ap:plugin-distribution
+    label: 插件化分发
+    aliases: [插件分发, plugin, marketplace, 可安装包, 符号链接分发, 软链接]
+  - id: ap:spec-driven
+    label: 规格驱动开发
+    aliases: [spec-driven, sdd, 规格驱动, 契约优先, contract-first]
+  - id: ap:artifact-handoff
+    label: 文件工件交接
+    aliases: [工件交接, artifact, 文件交接, 状态走文件]
+  - id: ap:citation-grounding
+    label: 引用溯源
+    aliases: [引用溯源, citation, 溯源, provenance, 出处追踪]
+  - id: ap:progressive-disclosure
+    label: 分级处理 / 优雅降级
+    aliases: [优雅降级, graceful degradation, 分级, triage, 降级]

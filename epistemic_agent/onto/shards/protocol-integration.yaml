@@ -1,0 +1,45 @@
+shard: protocol-integration
+target_type: TechStack
+label: 协议与集成
+description: MCP、agent 间协议、鉴权与传输层
+
+terms:
+  - id: pi:mcp
+    label: MCP (Model Context Protocol)
+    aliases: [mcp, model-context-protocol, "@modelcontextprotocol/sdk",
+              mcp typescript sdk, vscode-mcp, "fastmcp/mcp"]
+  - id: pi:fastmcp
+    label: FastMCP
+    aliases: [fastmcp, fastapi-mcp]
+    parent: pi:mcp
+  - id: pi:mcp-server
+    label: MCP Server 实现
+    aliases: [mcp-server, mongodb-mcp-server, apollo-mcp-server, rosl-mcp-server,
+              splunk mcp, jira mcp, palantir-mcp, mcp-atlassian, r mcptools]
+    parent: pi:mcp
+  - id: pi:streamable-http
+    label: Streamable HTTP
+    aliases: [streamable http, streamable-http, streamablehttp]
+    parent: pi:mcp
+  - id: pi:a2a
+    label: A2A (Agent-to-Agent)
+    aliases: [a2a, a2a-sdk]
+  - id: pi:acp
+    label: ACP (Agent Communication Protocol)
+    aliases: [acp, acp-sdk]
+  - id: pi:oauth2
+    label: OAuth2 / OIDC
+    aliases: [oauth2, oauth, oauth2-oidc, oidc, oauth2 client_credentials,
+              bedrock-oidc, xsuaa, azure-identity, google auth, jwt]
+  - id: pi:graphql
+    label: GraphQL
+    aliases: [graphql, gitlab-graphql, springdoc]
+  - id: pi:sse
+    label: SSE / 流式传输
+    aliases: [sse, sse-starlette, "fastapi+sse-starlette", eventsource]
+  - id: pi:websocket
+    label: WebSocket
+    aliases: [websocket, websockets]
+  - id: pi:rest-api
+    label: REST API
+    aliases: [rest, rest-api, openapi, swagger]

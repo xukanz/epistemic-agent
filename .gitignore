@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+
+# Instance runtime artefacts. The KG, changelog, and review queue *are*
+# committed — they are the audit trail. Regenerable intermediates are not.
+instances/*/kg/snapshots/
+instances/*/data/processed/
+instances/*/data/raw/
+instances/*/review/attachments/
+instances/*/payload.*.json
+*.tmp.json
+
+# This instance is built from a real internal organisation's GitLab scan —
+# repo paths, team namespaces, usernames, and internal hostnames throughout
+# its KG data. Never published, whatever else in instances/ is.
+instances/acme-gitlab-agents/
+
+docs/tutorial.md

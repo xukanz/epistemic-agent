@@ -1,0 +1,58 @@
+shard: llm-provider
+target_type: TechStack
+label: 模型提供方与推理
+description: LLM 提供商 SDK、托管平台、本地推理引擎、网关
+
+terms:
+  - id: llm:anthropic
+    label: Anthropic Claude
+    aliases: [anthropic, claude, anthropic api, claude-3-5-sonnet, claude-sonnet,
+              claude-opus, langchain-anthropic, anthropic-sdk]
+  - id: llm:openai
+    label: OpenAI
+    aliases: [openai, openai api, openai-python, "openai(npm)", langchain-openai,
+              openai cookbook 范式]
+  - id: llm:azure-openai
+    label: Azure OpenAI
+    aliases: [azure-openai, azure openai, azure-openai-service, portkey/azure-openai]
+  - id: llm:bedrock
+    label: AWS Bedrock
+    aliases: [bedrock, aws-bedrock, aws bedrock, langchain-aws/bedrock,
+              boto3 bedrock agents, bedrock runtime]
+  - id: llm:bedrock-agentcore
+    label: Bedrock AgentCore
+    aliases: [bedrock-agentcore, aws-bedrock-agentcore, agentcore]
+    parent: llm:bedrock
+  - id: llm:bedrock-kb
+    label: Bedrock Knowledge Base
+    aliases: [bedrock-kb, aws bedrock knowledge base, bedrock knowledge base]
+    parent: llm:bedrock
+  - id: llm:google-genai
+    label: Google Gemini / GenAI
+    aliases: [google-genai, gemini, gemini-2.5-pro, langchain-google-genai,
+              google generativeai, vertex-ai, vertexai]
+  - id: llm:ollama
+    label: Ollama
+    aliases: [ollama]
+  - id: llm:vllm
+    label: vLLM
+    aliases: [vllm]
+  - id: llm:sglang
+    label: SGLang
+    aliases: [sglang]
+  - id: llm:litellm
+    label: LiteLLM
+    aliases: [litellm]
+  - id: llm:huggingface
+    label: HuggingFace
+    aliases: [huggingface, huggingface hub, huggingface 权重缓存, hf-hub, transformers,
+              "transformers/peft", peft, sentence-transformers, fastembed, flashrank]
+  - id: llm:torch
+    label: PyTorch
+    aliases: [torch, pytorch, "pytorch/flash-attention", flash-attention, "torch(cpu)"]
+  - id: llm:portkey
+    label: Portkey
+    aliases: [portkey, portkey-ai, portkey 网关, "portkey/galileo", "portkey/azure-openai"]
+  - id: llm:openrouter
+    label: OpenRouter
+    aliases: [openrouter]

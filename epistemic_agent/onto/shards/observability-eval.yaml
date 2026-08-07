@@ -1,0 +1,46 @@
+shard: observability-eval
+target_type: TechStack
+label: 可观测性与评测
+description: 追踪、监控、实验记录、agent 评测
+
+terms:
+  - id: oe:mlflow
+    label: MLflow
+    aliases: [mlflow, mlflow-tracing]
+  - id: oe:langfuse
+    label: Langfuse
+    aliases: [langfuse, "langfuse/langsmith"]
+  - id: oe:langsmith
+    label: LangSmith
+    aliases: [langsmith]
+  - id: oe:opentelemetry
+    label: OpenTelemetry
+    aliases: [opentelemetry, otel, arize phoenix otel, arize-phoenix]
+  - id: oe:grafana
+    label: Grafana 栈
+    aliases: [grafana, prometheus, loki, tempo]
+  - id: oe:splunk
+    label: Splunk
+    aliases: [splunk]
+  - id: oe:datadog
+    label: Datadog
+    aliases: [datadog]
+  - id: oe:ragas
+    label: RAGAS
+    aliases: [ragas]
+  - id: oe:promptfoo
+    label: promptfoo
+    aliases: [promptfoo]
+  - id: oe:weave
+    label: W&B Weave
+    aliases: [weave, wandb, comet-api, comet]
+  - id: oe:pytest
+    label: pytest
+    aliases: [pytest, pytest-asyncio, pytest-bdd, pytest-html, "pytest/coverage",
+              coverage, tox]
+  - id: oe:cypress
+    label: Cypress
+    aliases: [cypress, playwright]
+  - id: oe:sonar
+    label: SonarQube
+    aliases: [sonar, sonarqube, "maven/jacoco/sonar", jacoco]

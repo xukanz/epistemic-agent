@@ -1,0 +1,53 @@
+# Instance configuration — the single adaptation surface.
+# The agent fills this in during the first-run conversation.
+
+name: {{instance_name}}
+
+# What this map is for, and which questions it must be able to answer.
+# Written by the agent in the user's own words after the first-run conversation.
+purpose: ""
+
+# Every path the CLI touches. Nothing is hard-coded elsewhere.
+paths:
+  kg: kg/capability-map.json
+  schema: schema/kg-schema.yaml
+  manifest: data/processed/manifest.json
+  changelog: kg/changelog.md
+  health: kg/health-manifest.json
+  review: review
+  suggestions: kg/vocabulary-suggestions.md
+
+# Controlled vocabulary.
+#   backend: local — YAML shards read in-process (default)
+#   backend: mcp   — a shared taxonomy served over MCP (see onto/client.py)
+# extra_shard_dirs is where organisation-specific vocabulary goes — an
+# internal-systems list, an in-house framework catalogue — so that the
+# framework's own shards stay reusable.
+onto:
+  backend: local
+  extra_shard_dirs:
+    - vocabulary
+
+# Which node types the health check expects to be grounded.
+health:
+  semantic_types: [TechStack, Capability, Pattern, InternalSystem]
+
+# Merge strategies, in the order they run. `capmap merge` reads this list;
+# changing node types does not require touching framework code.
+merge:
+  strategies:
+    - {type: alias, node_type: TechStack, id_prefix: "tech-"}
+    - {type: alias, node_type: Pattern, id_prefix: "pattern-"}
+    - {type: fuzzy_label, node_type: TechStack, threshold: 0.93}
+    - {type: natural_key, node_type: Repo, key_prop: path}
+    - {type: multi_token, node_type: TechStack}
+
+# LLM provider for the optional extraction path (`capmap ingest --llm`).
+# Format: <provider>/<model>, provider ∈ {ollama, claude, openai}
+llm:
+  default_model: ollama/gemma3:latest
+  # default_model: claude/claude-sonnet-5
+
+# Keep private until an explicit decision is made to publish. A capability map
+# names teams and rates their work; it is not a neutral artefact.
+deployment: private

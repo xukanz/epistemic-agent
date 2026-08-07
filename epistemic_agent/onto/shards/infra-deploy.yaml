@@ -1,0 +1,85 @@
+shard: infra-deploy
+target_type: TechStack
+label: 基础设施与交付
+description: 容器、编排、IaC、CI/CD、计算调度
+
+terms:
+  - id: id:docker
+    label: Docker
+    aliases: [docker, docker-compose, docker compose, podman-compose, podman,
+              "docker/k8s", docker-multistage, 内网基础镜像, kaniko]
+  - id: id:kubernetes
+    label: Kubernetes
+    aliases: [kubernetes, k8s, "rancher/k8s", rancher, hpa, ecs-fargate]
+  - id: id:helm
+    label: Helm
+    aliases: [helm, "helm/ingress"]
+    parent: id:kubernetes
+  - id: id:kustomize
+    label: Kustomize
+    aliases: [kustomize]
+    parent: id:kubernetes
+  - id: id:argocd
+    label: ArgoCD
+    aliases: [argocd, argo-cd, gitops]
+    parent: id:kubernetes
+  - id: id:terraform
+    label: Terraform
+    aliases: [terraform]
+  - id: id:aws-cdk
+    label: AWS CDK
+    aliases: [aws-cdk, aws cdk, aws-cdk-lib, cdk-ecr-deployment,
+              "cloudformation/aws cli", cloudformation]
+  - id: id:aws-lambda
+    label: AWS Lambda
+    aliases: [aws-lambda, lambda, "boto3/lambda"]
+  - id: id:aws-ecs
+    label: AWS ECS
+    aliases: [aws-ecs, ecs, ecs scheduled task]
+  - id: id:sagemaker
+    label: AWS SageMaker
+    aliases: [sagemaker, aws sagemaker datazone]
+  - id: id:boto3
+    label: boto3
+    aliases: [boto3, moto, jmespath]
+  - id: id:aws-secrets
+    label: AWS Secrets / Parameter Store
+    aliases: [aws-secretsmanager, aws secrets manager, secrets manager,
+              aws-parameter-store, secret-manager, xsuaa-secret]
+  - id: id:aws-artifact-registry
+    label: 制品仓库（ECR / CodeArtifact）
+    aliases: [ecr, aws ecr, codeartifact, gitlab-registry]
+  - id: id:aws-cdn
+    label: CloudFront
+    aliases: [cloudfront]
+  - id: id:aws-messaging
+    label: SNS / SQS
+    aliases: [sns, sqs]
+  - id: id:aws-audit
+    label: CloudTrail / SSM Automation
+    aliases: [cloudtrail, aws ssm automation, ssm automation]
+  - id: id:gitlab-ci
+    label: GitLab CI
+    aliases: [gitlab-ci, gitlab ci, gitlab-pipelines, gitlab-pages, gitlab-registry]
+  - id: id:github-actions
+    label: GitHub Actions
+    aliases: [github-actions, github actions]
+  - id: id:devcontainer
+    label: Devcontainer
+    aliases: [devcontainer, devcontainer-mounts, devcontainer setup 脚本,
+              "ona/codespaces", codespaces, vscode-workspace]
+  - id: id:testcontainers
+    label: Testcontainers
+    aliases: [testcontainers, localstack]
+  - id: id:slurm
+    label: Slurm / HPC
+    aliases: [slurm, "shpc/slurm", "nf-core/slurm", lsf, sHPC]
+  - id: id:app-engine
+    label: GCP App Engine
+    aliases: [gcp-app-engine, app engine, google cloud sdk, cloud foundry, "cloud foundry/mta"]
+  - id: id:renovate
+    label: Renovate
+    aliases: [renovate]
+  - id: id:pre-commit
+    label: pre-commit
+    aliases: [pre-commit, semantic-release]

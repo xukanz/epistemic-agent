@@ -1,0 +1,76 @@
+shard: dev-agent-tooling
+target_type: TechStack
+label: 编码 Agent 与工程工具
+description: 编码 agent、skill/plugin 分发、语言运行时与包管理
+
+terms:
+  - id: dt:claude-code
+    label: Claude Code
+    aliases: [claude-code, claude code, claude-code-cli, "claude code/ona",
+              "claude code/codex/gemini cli", claude-code-skill]
+  - id: dt:claude-skills
+    label: Claude Code Skills
+    aliases: [claude-code-skills, claude code skills, skill.md, "skill.md 格式",
+              skills, skill, claude skills, ona skills, subagents]
+    parent: dt:claude-code
+  - id: dt:claude-plugin
+    label: Claude Code Plugin / Marketplace
+    aliases: [claude code plugin, claude-code-plugin, marketplace.json,
+              plugin marketplace, "@-import 指针"]
+    parent: dt:claude-code
+  - id: dt:github-copilot
+    label: GitHub Copilot
+    aliases: [github-copilot, github copilot, copilot-cli, github-copilot-cli,
+              github copilot custom instructions, copilot]
+  - id: dt:cursor
+    label: Cursor
+    aliases: [cursor]
+  - id: dt:aider
+    label: Aider
+    aliases: [aider]
+  - id: dt:codex
+    label: OpenAI Codex CLI
+    aliases: [codex, "claude/codex agent 配置"]
+  - id: dt:agents-md
+    label: AGENTS.md 约定
+    aliases: [agents.md, agents-md]
+  - id: dt:vscode
+    label: VS Code
+    aliases: [vscode, vs code, "rstudio/vs code", rstudio]
+  - id: dt:uv
+    label: uv
+    aliases: [uv, uv workspace]
+  - id: dt:poetry
+    label: Poetry
+    aliases: [poetry]
+  - id: dt:conda
+    label: conda
+    aliases: [conda, 共享 conda 内核]
+  - id: dt:npm
+    label: Node / npm
+    aliases: [node, npm, "node/npm", concurrently]
+  - id: dt:maven
+    label: Maven / Gradle
+    aliases: [maven, gradle, "gradle/jdk8", maven 多模块]
+  - id: dt:ruff
+    label: Ruff
+    aliases: [ruff]
+  - id: dt:typer
+    label: Typer
+    aliases: [typer, python-cli, questionary, rich, click]
+  - id: dt:pydantic
+    label: Pydantic
+    aliases: [pydantic, pydantic-settings, jsonschema, json schema, dotenv,
+              python-dotenv, pyyaml]
+  - id: dt:cookiecutter
+    label: Cookiecutter / Copier
+    aliases: [cookiecutter, copier, go-task, make]
+  - id: dt:git-submodule
+    label: Git submodule
+    aliases: [git-submodule, git submodule]
+  - id: dt:renv
+    label: renv
+    aliases: [renv, rscript, ellmer, "{admiral} r 包", rpy2]
+  - id: dt:tmux
+    label: tmux
+    aliases: [tmux]
