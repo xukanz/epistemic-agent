@@ -19,7 +19,13 @@ dependencies = [
 [project.optional-dependencies]
 tui = ["textual>=0.80"]
 llm = ["openai>=1.0", "anthropic>=0.25"]
-all = ["epistemic-agent[tui,llm]"]
+# `capmap agent` talks to any endpoint that speaks the OpenAI
+# `/chat/completions` wire format — OpenAI itself, Portkey, LiteLLM, Azure
+# OpenAI, a proxy in front of Bedrock, or Anthropic's own beta OpenAI-
+# compatible endpoint. Uses the plain `openai` SDK; gateways that need the
+# key on a non-standard header set `OPENAI_EXTRA_HEADER` for it.
+agent = ["openai>=1.0"]
+all = ["epistemic-agent[tui,llm,agent]"]
 dev = ["pytest>=8.0", "ruff>=0.4"]
 
 [project.scripts]

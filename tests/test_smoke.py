@@ -6,10 +6,26 @@ they are regression tests rather than coverage decoration.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
 
+from epistemic_agent.agent.tools import (
+    _export,
+    _fetch_url,
+    _ingest_payload,
+    _merge_apply,
+    _merge_dry_run,
+    _orient_state,
+    _read_file,
+    _read_skill,
+    _review_status,
+    _vocab_draft,
+    _view,
+    _write_file,
+    build_openai_tools,
+)
 from epistemic_agent.analysis import views as V
 from epistemic_agent.bootstrap.generic import run_generic_bootstrap
 from epistemic_agent.ingest.document import ground_payload, ingest_entities
@@ -32,6 +48,7 @@ from epistemic_agent.onto.draft import (
     labels_from_suggestions_md,
     write_draft_files,
 )
+from epistemic_agent.project import Project
 
 # ---------------------------------------------------------------------------
 # Normalisation
@@ -686,3 +703,428 @@ def test_viewer_views_are_derived_not_empty():
     rows = {r["key"]: r for r in view_summary(_tiny_graph())}
     assert rows["full"]["nodes"] == len(_tiny_graph()["nodes"])
     assert rows["team"]["nodes"] > 0
+
+
+def _export_project(tmp_path: Path) -> Project:
+    kg_path = tmp_path / "kg" / "capability-map.json"
+    kg_path.parent.mkdir(parents=True)
+    kg_path.write_text(json.dumps(_tiny_graph()))
+    return Project(tmp_path, {"name": "t"})
+
+
+def test_run_export_html_writes_a_file_and_reports_counts(tmp_path):
+    from epistemic_agent.export.viewer import run_export
+
+    result = run_export(_export_project(tmp_path), fmt="html")
+    assert result["nodes"] == len(_tiny_graph()["nodes"])
+    assert result["output_path"] == tmp_path / "kg" / "capability-map.html"
+    assert result["output_path"].exists()
+
+
+def test_run_export_node_type_filter_drops_disconnected_edges(tmp_path):
+    """Domain-only nodes share no edge with each other (they only connect to
+    Repo) — the filter must still succeed and flag the empty edge set rather
+    than silently producing a file with nodes but no connections."""
+    from epistemic_agent.export.viewer import run_export
+
+    result = run_export(_export_project(tmp_path), fmt="dot", node_type="Domain")
+    assert any("no edges survived" in n for n in result["notes"])
+
+
+def test_run_export_rejects_unknown_format(tmp_path):
+    from epistemic_agent.export.viewer import run_export
+
+    assert "error" in run_export(_export_project(tmp_path), fmt="pptx")
+
+
+# ---------------------------------------------------------------------------
+# Agent tools
+
+
+def _agent_project(tmp_path: Path, merge_strategies: list | None = None) -> Project:
+    """A minimal but complete instance directory for the agent tool tests —
+    same shape `find_project()` would resolve, built by hand so tests don't
+    depend on `capmap init`'s template."""
+    schema = tmp_path / "schema.yaml"
+    schema.write_text(
+        "nodes:\n  Repo: {}\n  TechStack: {}\nedges:\n  USES_TECH: {}\n"
+    )
+    (tmp_path / "skills").mkdir()
+    (tmp_path / "skills" / "orient-state.md").write_text("# Skill: Orient State\n")
+    config = {
+        "name": "agent-test",
+        "paths": {"schema": "schema.yaml"},
+        "merge": {"strategies": merge_strategies or []},
+    }
+    return Project(tmp_path, config)
+
+
+def test_orient_state_follows_first_run_protocol_when_no_kg(tmp_path):
+    """A brand-new instance has no KG yet — the tool must say so and tell the
+    caller not to scaffold, not crash trying to load a missing file."""
+    proj = _agent_project(tmp_path)
+    out = _orient_state(proj)
+    assert "first-run protocol" in out
+    assert "Do NOT scaffold" in out
+
+
+def test_orient_state_summarises_an_existing_graph(tmp_path):
+    proj = _agent_project(tmp_path)
+    payload = {
+        "source_files": [],
+        "nodes": [
+            {"id": "repo-a", "type": "Repo", "name": "a", "path": "t/a"},
+            {"id": "tech-langgraph", "type": "TechStack", "label": "LangGraph"},
+        ],
+        "edges": [{"type": "USES_TECH", "source": "repo-a", "target": "tech-langgraph"}],
+    }
+    ingest_entities(payload, proj.kg_path, proj.schema_path, proj.manifest_path, proj.changelog_path)
+    out = _orient_state(proj)
+    assert "2 nodes, 1 edges" in out
+    assert "Pending review items: 0" in out
+
+
+def test_read_skill_lists_available_skills_on_miss(tmp_path):
+    proj = _agent_project(tmp_path)
+    out = _read_skill(proj, "does-not-exist")
+    assert "orient-state" in out
+    assert "does-not-exist" in out
+
+
+def test_read_skill_returns_file_contents_on_hit(tmp_path):
+    proj = _agent_project(tmp_path)
+    assert _read_skill(proj, "orient-state") == "# Skill: Orient State\n"
+
+
+def test_ingest_payload_is_idempotent_and_force_overrides_it(tmp_path):
+    """Mirrors `capmap ingest`'s own idempotence contract (manifest content
+    hash) through the agent tool wrapper — a re-run with unchanged source
+    files must not silently re-add nodes a merge folded away."""
+    proj = _agent_project(tmp_path)
+    payload_path = tmp_path / "payload.json"
+    payload_path.write_text(
+        json.dumps(
+            {
+                "source_files": [str(payload_path)],
+                "nodes": [{"id": "repo-a", "type": "Repo", "name": "a", "path": "t/a"}],
+                "edges": [],
+            }
+        )
+    )
+    first = _ingest_payload(proj, str(payload_path))
+    assert "Ingest: +1 nodes" in first
+
+    second = _ingest_payload(proj, str(payload_path))
+    assert "Nothing to do" in second
+
+    forced = _ingest_payload(proj, str(payload_path), force=True)
+    assert "Ingest:" in forced
+
+
+def test_vocab_draft_requires_a_source(tmp_path):
+    proj = _agent_project(tmp_path)
+    assert "Pass a payload path" in _vocab_draft(proj)
+
+
+def test_vocab_draft_writes_outside_vocabulary_dir(tmp_path):
+    proj = _agent_project(tmp_path)
+    payload_path = tmp_path / "payload.json"
+    payload_path.write_text(
+        json.dumps(
+            {
+                "nodes": [
+                    {"id": "tech-a", "type": "TechStack", "label": "AcmeBillingCore"},
+                    {"id": "tech-b", "type": "TechStack", "label": "acme-billing-core"},
+                ]
+            }
+        )
+    )
+    out = _vocab_draft(proj, payload=str(payload_path))
+    assert "TechStack: 2 labels -> 1 groups" in out
+    assert (tmp_path / "kg" / "vocabulary-draft" / "techstack.yaml").exists()
+    assert not (tmp_path / "vocabulary").exists()
+
+
+def test_merge_dry_run_reports_without_writing_the_kg(tmp_path):
+    """dry_run must leave the on-disk KG untouched — only merge_apply may write."""
+    proj = _agent_project(
+        tmp_path, merge_strategies=[{"type": "alias", "node_type": "TechStack", "id_prefix": "tech-"}]
+    )
+    kg = {
+        "nodes": [
+            {"id": "tech-mongodb", "type": "TechStack",
+             "properties": {"label": "mongodb", "term_id": "sr:mongodb"}},
+            {"id": "tech-beanie", "type": "TechStack",
+             "properties": {"label": "beanie", "term_id": "sr:mongodb"}},
+        ],
+        "edges": [],
+    }
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps(kg))
+
+    dry = _merge_dry_run(proj)
+    assert "DRY RUN" in dry
+    assert "Merges: 1" in dry
+    assert len(json.loads(proj.kg_path.read_text())["nodes"]) == 2
+
+    applied = _merge_apply(proj)
+    assert "DRY RUN" not in applied
+    assert len(json.loads(proj.kg_path.read_text())["nodes"]) == 1
+
+
+def test_view_experts_requires_a_query(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps({"nodes": [], "edges": []}))
+    assert "needs a query" in _view(proj, "experts")
+
+
+def test_export_follows_first_run_protocol_when_no_kg(tmp_path):
+    proj = _agent_project(tmp_path)
+    assert "first-run protocol" in _export(proj)
+
+
+def test_export_writes_html_by_default(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps(_tiny_graph()))
+    out = _export(proj)
+    assert "Wrote" in out
+    assert (proj.root / "kg" / "capability-map.html").exists()
+
+
+def test_review_status_is_read_only(tmp_path):
+    from epistemic_agent.review.emitters import emit_grounding_candidate
+    from epistemic_agent.review.queue import ReviewQueue
+
+    proj = _agent_project(tmp_path)
+    q = ReviewQueue(proj.review_dir)
+    q.append_unique(
+        emit_grounding_candidate(
+            source_project="p", entity_label="foo", entity_id="tech-foo",
+            candidates=[{"term_id": "x:foo", "label": "Foo"}], cluster_score=0.6,
+        )
+    )
+    out = _review_status(proj)
+    assert "1 pending review items" in out
+    assert "vocabulary_grounding" in out
+    assert "Read-only" in out
+
+
+_TOOL_WHITELIST = {
+    "orient_state",
+    "read_skill",
+    "run_bootstrap",
+    "ingest_payload",
+    "vocab_draft",
+    "merge_dry_run",
+    "merge_apply",
+    "view",
+    "review_status",
+    "read_file",
+    "fetch_url",
+    "write_file",
+    "export",
+}
+
+
+def test_build_openai_tools_never_exposes_a_vocabulary_write_or_review_resolution_tool(tmp_path):
+    """Pins the agent's tool-set guardrail: exactly these 13 names, no more.
+    `write_file` exists (unlike the old all-or-nothing guardrail) but must
+    refuse `vocabulary/*.yaml`, `kg/`, and `review/` itself — see the
+    `test_write_file_refuses_*` tests below for that half of the guarantee.
+    If a future tool is added under a name outside this list, this test fails
+    and forces a deliberate look before it ships."""
+    proj = _agent_project(tmp_path)
+    specs, dispatch = build_openai_tools(proj)
+    assert {s["name"] for s in specs} == _TOOL_WHITELIST
+    assert set(dispatch) == _TOOL_WHITELIST
+
+
+def test_build_openai_tools_dispatch_maps_arguments_correctly(tmp_path):
+    """Each dispatch entry must forward its parsed-JSON arguments to the right
+    keyword on the underlying `_snake_case` function — a mismatch here would
+    silently ignore an argument the model actually sent."""
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps({"nodes": [], "edges": []}))
+
+    _, dispatch = build_openai_tools(proj)
+
+    assert dispatch["read_skill"](name="orient-state") == "# Skill: Orient State\n"
+    assert "no-such-skill" in dispatch["read_skill"](name="no-such-skill")
+    assert "needs a query" in dispatch["view"](name="experts")
+    assert dispatch["orient_state"]() == _orient_state(proj)
+    assert dispatch["review_status"]() == _review_status(proj)
+
+
+# ---------------------------------------------------------------------------
+# read_file / fetch_url / write_file
+
+
+def test_read_file_reads_and_reports_missing(tmp_path):
+    f = tmp_path / "seed.yaml"
+    f.write_text("repos: []\n")
+    assert _read_file(str(f)) == "repos: []\n"
+    assert "No file at" in _read_file(str(tmp_path / "does-not-exist.yaml"))
+
+
+def test_read_file_truncates_large_files(tmp_path):
+    f = tmp_path / "big.txt"
+    f.write_text("x" * 100)
+    out = _read_file(str(f), max_chars=10)
+    assert out.startswith("x" * 10)
+    assert "truncated, 100 chars total" in out
+
+
+def test_fetch_url_returns_real_content_from_a_local_server():
+    """Exercises the success path against a real HTTP response, not just the
+    error branch — a local server keeps this independent of outside network."""
+    import http.server
+    import threading
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b'{"hello": "world"}')
+
+        def log_message(self, *a):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        out = _fetch_url(f"http://127.0.0.1:{server.server_port}/")
+        assert out == '{"hello": "world"}'
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+def test_fetch_url_reports_failure_instead_of_raising():
+    out = _fetch_url("http://127.0.0.1:1/")  # port 1 refuses immediately
+    assert "Fetch failed" in out
+
+
+def test_write_file_accepts_the_three_setup_files_and_data_raw(tmp_path):
+    proj = _agent_project(tmp_path)
+    for rel, content in [
+        ("config/project.yaml", "name: x\n"),
+        ("schema/kg-schema.yaml", "nodes: {}\n"),
+        ("scripts/bootstrap.py", "print('hi')\n"),
+        ("data/raw/inventory.json", '{"a": 1}'),
+    ]:
+        msg = _write_file(proj, rel, content)
+        assert "Wrote" in msg
+        assert (proj.root / rel).read_text() == content
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "vocabulary/internal-system.yaml",
+        "kg/capability-map.json",
+        "review/items.jsonl",
+        "CLAUDE.md",
+        "../outside.txt",
+        "data/raw/../../outside.txt",
+    ],
+)
+def test_write_file_refuses_paths_outside_the_allowlist(tmp_path, path):
+    """Pins the other half of the write_file guardrail: these paths must be
+    refused and must not exist afterwards, regardless of how the traversal is
+    spelled."""
+    proj = _agent_project(tmp_path)
+    msg = _write_file(proj, path, "anything")
+    assert "Refused" in msg
+    assert not (proj.root / path).exists()
+
+
+def test_write_file_refuses_an_absolute_path(tmp_path):
+    proj = _agent_project(tmp_path)
+    target = tmp_path.parent / "escaped.txt"
+    msg = _write_file(proj, str(target), "anything")
+    assert "Refused" in msg
+    assert not target.exists()
+
+
+def test_write_file_refuses_invalid_yaml(tmp_path):
+    proj = _agent_project(tmp_path)
+    msg = _write_file(proj, "config/project.yaml", "name: [unterminated\n")
+    assert "Refused" in msg
+    assert "valid YAML" in msg
+
+
+# ---------------------------------------------------------------------------
+# .env.llm loading
+
+
+def test_load_env_file_sets_undefined_vars(tmp_path, monkeypatch):
+    from epistemic_agent.agent.runtime import _load_env_file
+
+    monkeypatch.delenv("OPENAI_TEST_KEY", raising=False)
+    (tmp_path / ".env.llm").write_text(
+        "# a comment\n\nOPENAI_TEST_KEY=\"from-file\"\nMALFORMED LINE\n"
+    )
+    _load_env_file(tmp_path)
+    assert os.environ["OPENAI_TEST_KEY"] == "from-file"
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        # The bug: a copy-pasted example line's trailing comment used to
+        # become part of the value, e.g. a model ID glued to "# no default
+        # — deployment-specific".
+        ("us.anthropic.claude-opus-5   # no default — deployment-specific", "us.anthropic.claude-opus-5"),
+        ('"quoted#value"', "quoted#value"),  # '#' inside quotes is literal
+        ("https://example.com/v1#frag   # trailing comment", "https://example.com/v1#frag"),
+        ("plain-value", "plain-value"),
+        ("#just a comment", ""),
+    ],
+)
+def test_strip_env_value_removes_inline_comments(raw, expected):
+    from epistemic_agent.agent.runtime import _strip_env_value
+
+    assert _strip_env_value(raw) == expected
+
+
+def test_load_env_file_strips_inline_comment_on_the_model_id(tmp_path, monkeypatch):
+    """Regression: OPENAI_MODEL copy-pasted from .env.llm.example with its
+    trailing comment intact used to print
+    'via OpenAI-compatible endpoint (MODEL   # no default — deployment-specific).'
+    instead of a clean model name."""
+    from epistemic_agent.agent.runtime import _load_env_file
+
+    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+    (tmp_path / ".env.llm").write_text(
+        "OPENAI_MODEL=us.anthropic.claude-opus-5   # no default — deployment-specific\n"
+    )
+    _load_env_file(tmp_path)
+    assert os.environ["OPENAI_MODEL"] == "us.anthropic.claude-opus-5"
+
+
+def test_load_env_file_never_overrides_an_already_exported_var(tmp_path, monkeypatch):
+    """A real shell export must win over the file — the file is a fallback,
+    not a way to silently override what the user already set."""
+    from epistemic_agent.agent.runtime import _load_env_file
+
+    monkeypatch.setenv("OPENAI_TEST_KEY", "from-shell")
+    (tmp_path / ".env.llm").write_text("OPENAI_TEST_KEY=from-file\n")
+    _load_env_file(tmp_path)
+    assert os.environ["OPENAI_TEST_KEY"] == "from-shell"
+
+
+def test_load_env_file_closest_directory_wins(tmp_path, monkeypatch):
+    monkeypatch.delenv("OPENAI_TEST_KEY", raising=False)
+    from epistemic_agent.agent.runtime import _load_env_file
+
+    (tmp_path / ".env.llm").write_text("OPENAI_TEST_KEY=root\n")
+    nested = tmp_path / "instances" / "your-team"
+    nested.mkdir(parents=True)
+    (nested / ".env.llm").write_text("OPENAI_TEST_KEY=instance\n")
+    _load_env_file(nested)
+    assert os.environ["OPENAI_TEST_KEY"] == "instance"
