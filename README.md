@@ -63,7 +63,11 @@ capmap init my-org
 cd my-org && claude
 ```
 
-`capmap init` 之后进 Claude Code，agent 会读 `CLAUDE.md` 走首次对话流程：先问清楚这张图给谁看、要回答什么，**再问两个硬前提**（词表从哪来、谁审队列），然后才提 schema 草案。写好 `scripts/bootstrap.py` 和 `vocabulary/` 之后，日常循环是：
+`capmap init` 之后进 Claude Code，agent 会读 `CLAUDE.md` 走首次对话流程：先问清楚这张图给谁看、要回答什么，**再问两个硬前提**（词表从哪来、谁审队列），然后才提 schema 草案。
+
+**不想开 Claude Code？** `capmap agent` 是同一套首次对话流程的独立实现——不依赖 Claude Code，直接对接 Anthropic API 或者你们自己的 OpenAI 兼容网关，见下方[对话式操作](#对话式操作capmap-agent)。
+
+写好 `scripts/bootstrap.py` 和 `vocabulary/` 之后，日常循环是：
 
 ```bash
 python scripts/bootstrap.py --out payload.bootstrap.json   # 确定性冷启动，不用 LLM
@@ -84,13 +88,33 @@ capmap export -f dot --around "<某个仓库>" --hops 1         # 邻域子图�
 
 ---
 
+## 对话式操作：capmap agent
+
+`capmap init` 之后不一定要开 Claude Code——`capmap agent` 是一个独立的对话循环，读同一份实例 `CLAUDE.md`，自己调用下面这 13 个工具，而不是等人在终端里敲命令：
+
+```bash
+capmap agent                    # 默认：直连 Anthropic API（Claude API + Tool Runner）
+capmap agent --backend portkey  # 走你们自己的 OpenAI 兼容网关（Portkey 或类似产品）
+```
+
+两个 backend 共用一套工具：`orient_state` / `read_skill` / `run_bootstrap` / `ingest_payload` / `vocab_draft` / `merge_dry_run` / `merge_apply` / `view` / `review_status` / `read_file` / `fetch_url` / `write_file` / `export`。Guardrail 用了两种不同机制，刻意区分：
+
+- **不存在**——写词表、解决审查队列条目、断言 `DUPLICATES` 边没有对应的工具，物理上调不到，不是靠它自觉。
+- **受限**——`write_file` 是真实的写入工具，但代码里写死只放行 `config/project.yaml` / `schema/kg-schema.yaml` / `scripts/bootstrap.py` / `data/raw/*`；`vocabulary/`、`kg/`、`review/` 一律拒绝，无论怎么问都不会松口。
+
+新团队接入不用手写任何文件：告诉它数据在哪个文件或哪个链接，它会自己 `read_file` / `fetch_url` 看真实数据、起草 `config/project.yaml` 和 `schema/kg-schema.yaml`（写之前先把内容念出来给你确认），碰到需要自定义解析代码的情况就照 `skills/bootstrap-instance.md` 写 `scripts/bootstrap.py` 自己跑。
+
+`--backend portkey` 需要设置 `PORTKEY_BASE_URL` / `PORTKEY_API_KEY` / `PORTKEY_MODEL`（模型 ID 按你们网关的命名，没有默认值）；`anthropic`（默认）走标准的 `ANTHROPIC_API_KEY` / `ant auth login`。
+
+---
+
 ## 关键设计决策
 
 **为什么合成层是五个确定性视图，不是叙述式文档。** 管理层问"谁会什么、有没有人在重复造轮子"要的是能查、能筛、能导出的表，不是一篇要通读的报告。所以分析层是 `coverage` / `duplicates` / `gaps` / `experts` / `risk` 五个确定性视图（见下），每个都是对图谱做一次固定的查询，不依赖 LLM 生成。
 
 **为什么词表层不做成独立 MCP 服务。** 技术栈没有一个类似 EDAM/GO/MONDO 那样体量大、有外部权威、值得跨项目共享的本体可以依赖。这里的词表只有几百条、是组织特有的、且必须由维护这张图的同一批人维护——为几个 YAML 文件起第二个进程没有收益。接口缝隙保留着（`onto/client.py` 的 `resolve_backend` 与 `McpVocabulary`），有共享内部技术分类法的组织可以在不动摄取代码的前提下换后端。
 
-**`DUPLICATES` 边只能由人工决策产生。** 两个仓库共享大部分技术栈不代表在做同一件事——`duplicates` 视图只产出候选，写入图谱前必须经过审查队列。
+**`DUPLICATES` 边只能由人工决策产生。** 两个仓库共享大部分技术栈不代表在做同一件事——`duplicates` 视图只产出候选，写入图谱前必须经过审查队列。`capmap agent` 的两个 backend 都没有能产生这条边的工具，跟人工用 CLI 的边界完全一致。
 
 ---
 
@@ -105,7 +129,9 @@ epistemic_agent/
     strategies.py          AliasMerge / FuzzyLabelMerge / NaturalKeyGuard / MultiTokenFlag
   onto/
     client.py              find_terms / find_concepts / 三档路由 + MCP 后端缝隙
+    draft.py                词表草稿聚类（capmap vocab-draft）
     shards/*.yaml          12 个通用技术栈分片，219 个术语
+  bootstrap/generic.py     配置驱动的通用冷启动，扁平数据源零代码接入
   health/manifest.py       通用质量信号 + 四个能力地图信号
   analysis/
     views.py               coverage / duplicates / gaps / experts / risk
@@ -114,15 +140,23 @@ epistemic_agent/
     formats.py             GraphML / GEXF / Cypher / DOT
     viewer.py + template.html  自包含 HTML 查看器（canvas + 力导向，无 CDN）
   review/                  ReviewItem 契约、JSONL 队列、Textual TUI、emitters
-  llm/client.py            多提供商统一接口（LLM 路径用）
+  llm/client.py            多提供商统一接口（可选 LLM 抽取路径）
+  agent/                   capmap agent：对话式操作，见上方一节
+    tools.py                13 个工具，纯函数 + 两种 SDK 的 schema 包装
+    prompt.py                系统提示词（复用实例的 CLAUDE.md）
+    runtime.py                按 backend 分发
+    backends/
+      anthropic_backend.py   Claude API + Tool Runner
+      portkey_backend.py     OpenAI 兼容网关（Portkey 等）
+  project.py               Project 路径解析，cli.py 和 agent/ 共用
   cli.py                   capmap 命令
-  template/                新实例脚手架（CLAUDE.md + 5 个 skill + schema + config）
+  template/                新实例脚手架（CLAUDE.md + 7 个 skill + schema + config）
 
 instances/
   acme-corp/               跑得通的虚构示例，见上方"现状"一节
   <your-instance>/         capmap init 生成，见下方目录结构
     vocabulary/            实例专属词表
-    scripts/bootstrap.py   确定性冷启动（自己写，参考 docs/new-instance.md）
+    scripts/bootstrap.py   确定性冷启动（模板自带通用版，或参考 docs/new-instance.md 自己写）
 ```
 
 `review/`（models + queue + emitters + tui）和 `llm/client.py` 是真正领域无关的通用基础设施——不认识任何一个具体节点类型，任何基于这个框架的项目都能直接复用。
