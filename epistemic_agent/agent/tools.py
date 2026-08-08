@@ -2,9 +2,9 @@
 
 Most tools wrap an existing, already-deterministic library function — nothing
 here re-implements ingest, merge, or grounding logic. The plain `_snake_case`
-functions below are the actual implementations (unit-tested directly, no
-Tool Runner involved); `build_tools()` wraps them as `@beta_tool` closures
-over one `Project` for a single agent session.
+functions below are the actual implementations (unit-tested directly);
+`build_openai_tools()` wraps them in OpenAI function-calling shape for one
+`Project` for a single agent session.
 
 Two guardrail mechanisms coexist here, deliberately different in kind:
 
@@ -374,217 +374,16 @@ def _export(
 
 
 # ---------------------------------------------------------------------------
-# Tool wrapping
-
-
-def build_tools(project: Project) -> list:
-    """Return the `@beta_tool`-wrapped tool set for one agent session.
-
-    Imports `anthropic` lazily — this is the Anthropic-backend-only path, and
-    the OpenAI-compatible backend (`build_openai_tools()` below) must be
-    usable with only `openai` installed, no `anthropic` package at all.
-    """
-    from anthropic import beta_tool
-
-    @beta_tool
-    def orient_state() -> str:
-        """Summarise the current graph state: node/edge counts, health signals, and the pending review queue size.
-
-        Always call this first in a new conversation, and after any long gap,
-        before deciding what to do next.
-        """
-        return _orient_state(project)
-
-    @beta_tool
-    def read_skill(name: str) -> str:
-        """Read a skill playbook's full text from skills/<name>.md.
-
-        Pull in exactly the playbook needed for the current step instead of
-        assuming you already know it — skill files carry the specific
-        procedure, pitfalls, and guardrails for that step.
-
-        Args:
-            name: skill file stem, e.g. "orient-state", "bootstrap-instance", "seed-vocabulary".
-        """
-        return _read_skill(project, name)
-
-    @beta_tool
-    def run_bootstrap(out: str = "payload.bootstrap.json") -> str:
-        """Run scripts/bootstrap.py and return its stats report.
-
-        Works whether the instance has the generic config-driven script or a
-        hand-written one — either way this just runs it and reports what
-        happened. Read the counts it prints (e.g. repos without a domain or
-        team) as honest gaps in the source data, not bugs.
-
-        Args:
-            out: where to write the ingest payload, relative to the instance root.
-        """
-        return _run_bootstrap(project, out=out)
-
-    @beta_tool
-    def ingest_payload(path: str, force: bool = False) -> str:
-        """Write an ingest payload into the knowledge graph — the only write path into the KG.
-
-        Args:
-            path: path to the payload JSON, resolved from the current working directory.
-            force: ingest even if every declared source file is unchanged since the last ingest.
-        """
-        return _ingest_payload(project, path, force=force)
-
-    @beta_tool
-    def vocab_draft(
-        payload: str | None = None,
-        from_suggestions: bool = False,
-        fuzzy_threshold: float = 0.90,
-    ) -> str:
-        """Cluster ungrounded labels into a draft vocabulary for human review.
-
-        Deterministic clustering only (exact match after normalisation, plus a
-        fuzzy pass that excludes anything shaped like a hostname) — never
-        decides whether a group is real, and never writes to vocabulary/.
-
-        Args:
-            payload: bootstrap payload JSON path to cluster (a fresh instance's first pass).
-            from_suggestions: cluster kg/vocabulary-suggestions.md instead (topping up an established instance).
-            fuzzy_threshold: similarity cutoff for the fuzzy clustering pass.
-        """
-        return _vocab_draft(
-            project, payload=payload, from_suggestions=from_suggestions, fuzzy_threshold=fuzzy_threshold
-        )
-
-    @beta_tool
-    def merge_dry_run() -> str:
-        """Run the configured merge strategies without writing anything, and return the report.
-
-        Always call this — and show the report to the human — before ever
-        calling merge_apply.
-        """
-        return _merge_dry_run(project)
-
-    @beta_tool
-    def merge_apply() -> str:
-        """Apply the configured merge strategies to the knowledge graph.
-
-        Only call this after merge_dry_run's report has been shown to the
-        human and they have explicitly said to proceed — a merge can fold two
-        nodes together that a human would judge as legitimately distinct.
-        """
-        return _merge_apply(project)
-
-    @beta_tool
-    def view(name: str, query: str = "", by: str = "shard", limit: int = 20) -> str:
-        """Run an analysis view over the capability map and return it as JSON.
-
-        Args:
-            name: one of "coverage", "duplicates", "gaps", "experts", "risk".
-            query: required for "experts" — a technology or capability to search for.
-            by: for "coverage" — "shard" or "domain".
-            limit: max rows to return (0 for no limit).
-        """
-        return _view(project, name, query=query, by=by, limit=limit)
-
-    @beta_tool
-    def review_status() -> str:
-        """List pending review-queue items and counts by type. Read-only.
-
-        Resolving an item is a human action (`capmap review --reviewer
-        <name>`) — there is no tool for it, tell the human to run it
-        themselves.
-        """
-        return _review_status(project)
-
-    @beta_tool
-    def read_file(path: str) -> str:
-        """Read a local file's contents. No path restriction.
-
-        Args:
-            path: file path, absolute or relative to the current working directory.
-        """
-        return _read_file(path)
-
-    @beta_tool
-    def fetch_url(url: str) -> str:
-        """Fetch a URL's contents over HTTP(S).
-
-        Args:
-            url: the URL to fetch.
-        """
-        return _fetch_url(url)
-
-    @beta_tool
-    def write_file(path: str, content: str) -> str:
-        """Write a file — only for instance setup, not for anything a human must decide.
-
-        Only `config/project.yaml`, `schema/kg-schema.yaml`,
-        `scripts/bootstrap.py`, and anything under `data/raw/` can be written
-        this way; everything else (vocabulary/, kg/, review/) is refused.
-        Show the content to the human before calling this — writing the
-        wrong purpose or schema is cheap to fix, but silently overwriting
-        without asking is not a good habit to have.
-
-        Args:
-            path: path relative to the instance root.
-            content: full file content to write (this replaces the file, not a diff).
-        """
-        return _write_file(project, path, content)
-
-    @beta_tool
-    def export(
-        fmt: str = "html",
-        output: str | None = None,
-        default_view: str = "tech",
-        node_type: str | None = None,
-        around: str | None = None,
-        hops: int = 1,
-    ) -> str:
-        """Render the graph to a visualisation or graph-analysis file (default: HTML).
-
-        Only ever produces a new derived file — never touches
-        `kg/capability-map.json` itself.
-
-        Args:
-            fmt: "html" | "graphml" | "gexf" | "cypher" | "dot".
-            output: output path; defaults to kg/capability-map.<ext>.
-            default_view: for html — "tech" | "team" | "domain" | "full".
-            node_type: comma-separated list to keep only certain node types.
-            around: centre the export on one node (id or a resolvable label/tech name).
-            hops: how many edges to expand from `around`.
-        """
-        return _export(
-            project, fmt=fmt, output=output, default_view=default_view,
-            node_type=node_type, around=around, hops=hops,
-        )
-
-    return [
-        orient_state,
-        read_skill,
-        run_bootstrap,
-        ingest_payload,
-        vocab_draft,
-        merge_dry_run,
-        merge_apply,
-        view,
-        review_status,
-        read_file,
-        fetch_url,
-        write_file,
-        export,
-    ]
-
-
-# ---------------------------------------------------------------------------
 # OpenAI-compatible function-calling tools
 
 
 def build_openai_tools(project: Project) -> tuple[list[dict], dict]:
-    """The same tools as `build_tools()`, in OpenAI function-calling shape.
+    """Build the agent's tool set in OpenAI function-calling shape.
 
-    Anthropic's `@beta_tool` infers a JSON Schema from type hints; there's no
-    equivalent for the OpenAI wire format, so the schemas here are
-    written out by hand. The whitelist must stay identical to `build_tools()`
-    — see that function's guarantees in this module's docstring — which is
-    why both are pinned by the same test.
+    The schemas here are written out by hand rather than inferred from type
+    hints. The tool set must stay exactly the guardrail whitelist described
+    in this module's docstring — see `test_build_openai_tools_...` in
+    `tests/test_smoke.py` for the guarantee this is pinned by.
 
     Returns `(specs, dispatch)`: `specs` is `[{"name", "description",
     "parameters"}, ...]` ready to wrap as `{"type": "function", "function":

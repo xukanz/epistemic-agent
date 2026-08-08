@@ -1,15 +1,11 @@
-"""Backend dispatcher for `capmap agent`.
+"""Entry point for `capmap agent`.
 
-Two backends exist because an OpenAI-compatible endpoint (OpenAI itself,
-Portkey, LiteLLM, Azure OpenAI, a self-hosted gateway, ...) is not Anthropic's
-native Messages API — the two speak different wire formats for tool calls, so
-there's a real implementation per backend rather than one client with a
-`base_url` override. Picking a backend is a runtime choice, same pattern as
-`onto/client.py`'s `resolve_backend` for the vocabulary (local YAML vs. an MCP
-server): the caller doesn't need to know which one is running underneath.
-
-Default backend is `openai` — override with `--backend anthropic`, or set
-`CAPMAP_AGENT_BACKEND=anthropic` to change the default without a flag.
+Loads `.env.llm` (if present) and starts the OpenAI-compatible backend
+(`epistemic_agent.agent.backends.openai_backend`) — it speaks the standard
+`/chat/completions` wire format, which covers OpenAI itself, Portkey,
+LiteLLM, Azure OpenAI, a self-hosted gateway, and even Anthropic's own beta
+OpenAI-compatible endpoint (`OPENAI_BASE_URL=https://api.anthropic.com/v1`
+with a Claude model ID).
 """
 from __future__ import annotations
 
@@ -72,16 +68,9 @@ def _load_env_file(start: Path) -> None:
         return  # closest file wins — don't also load an ancestor's
 
 
-def run_repl(project: Project, model: str | None = None, backend: str | None = None) -> None:
+def run_repl(project: Project, model: str | None = None) -> None:
     _load_env_file(project.root)
 
-    backend = backend or os.environ.get("CAPMAP_AGENT_BACKEND") or "openai"
-
-    if backend == "openai":
-        from epistemic_agent.agent.backends.openai_backend import run_repl as _run
-    elif backend == "anthropic":
-        from epistemic_agent.agent.backends.anthropic_backend import run_repl as _run
-    else:
-        raise ValueError(f"Unknown agent backend {backend!r} — expected 'anthropic' or 'openai'")
+    from epistemic_agent.agent.backends.openai_backend import run_repl as _run
 
     _run(project, model=model)

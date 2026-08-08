@@ -3,12 +3,16 @@ gateway that speaks the `/chat/completions` wire format.
 
 This is not "the OpenAI backend" in the sense of only working with OpenAI's
 own API — it's the backend for anything that speaks OpenAI's wire format:
-Portkey, LiteLLM, Azure OpenAI, a self-hosted vLLM server, or OpenAI itself.
-That format is `response.choices[0].message`, `tools`/`tool_calls` — not
-Anthropic's native Messages API (`response.content`, `tool_use`/`tool_result`
-blocks). That's why this is a separate backend rather than pointing
-`anthropic.Anthropic` at a different `base_url`: the two APIs are not
-compatible enough for that.
+Portkey, LiteLLM, Azure OpenAI, a self-hosted vLLM server, OpenAI itself, or
+even Anthropic's own beta OpenAI-compatible endpoint
+(`https://api.anthropic.com/v1` with an Anthropic API key and a Claude model
+ID) — that last one means this single backend reaches Claude too, with no
+separate Anthropic-native implementation needed. The trade-off: that
+compatibility endpoint is a migration-oriented subset of Anthropic's real
+API, so Claude-native features (extended thinking, some params) aren't
+available through it, only through Anthropic's native Messages API — this
+backend's wire format is `response.choices[0].message`, `tools`/`tool_calls`,
+not `response.content`, `tool_use`/`tool_result` blocks.
 
 Implemented with the plain `openai` SDK, not a provider-specific package —
 `openai.OpenAI(base_url=..., api_key=..., default_headers=...)` works against

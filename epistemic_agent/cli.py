@@ -633,14 +633,7 @@ def ingest(
 
 @app.command()
 def agent(
-    model: Optional[str] = typer.Option(
-        None, "--model", help="Override the model (default depends on --backend)"
-    ),
-    backend: Optional[str] = typer.Option(
-        None,
-        "--backend",
-        help="anthropic | openai. Default: openai (or $CAPMAP_AGENT_BACKEND if set).",
-    ),
+    model: Optional[str] = typer.Option(None, "--model", help="Override the model (env var default)"),
 ):
     """Start an interactive, tool-using agent session for this instance.
 
@@ -648,19 +641,19 @@ def agent(
     same CLAUDE.md a human-operated Claude Code session would, and calls the
     deterministic tools in `epistemic_agent.agent.tools` itself. Vocabulary
     finalisation, review-queue resolution, and DUPLICATES edges stay
-    human-only: there is no tool for them, on either backend.
+    human-only: there is no tool for them.
 
-    Two backends: `openai` (default) goes through any endpoint that speaks
-    the OpenAI `/chat/completions` wire format — OpenAI itself, or a gateway
-    your organisation runs in front of it (Portkey, LiteLLM, Azure OpenAI,
-    Bedrock, ...) — see `epistemic_agent.agent.backends.openai_backend` for
-    the required env vars and your provider's own onboarding docs for the
-    values. `anthropic` calls the Claude API directly.
+    Goes through any endpoint that speaks the OpenAI `/chat/completions` wire
+    format — OpenAI itself, or a gateway your organisation runs in front of
+    it (Portkey, LiteLLM, Azure OpenAI, Bedrock, ...), or even Anthropic's own
+    beta OpenAI-compatible endpoint — see
+    `epistemic_agent.agent.backends.openai_backend` for the required env vars
+    and your provider's own onboarding docs for the values.
     """
     from epistemic_agent.agent.runtime import run_repl
 
     try:
-        run_repl(find_project(), model=model, backend=backend)
+        run_repl(find_project(), model=model)
     except ValueError as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(1) from exc

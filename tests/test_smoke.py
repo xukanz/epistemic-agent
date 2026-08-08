@@ -25,7 +25,6 @@ from epistemic_agent.agent.tools import (
     _view,
     _write_file,
     build_openai_tools,
-    build_tools,
 )
 from epistemic_agent.analysis import views as V
 from epistemic_agent.bootstrap.generic import run_generic_bootstrap
@@ -929,23 +928,13 @@ _TOOL_WHITELIST = {
 }
 
 
-def test_build_tools_never_exposes_a_vocabulary_write_or_review_resolution_tool(tmp_path):
-    """Pins the agent's tool-set guardrail: exactly these 12 names, no more.
+def test_build_openai_tools_never_exposes_a_vocabulary_write_or_review_resolution_tool(tmp_path):
+    """Pins the agent's tool-set guardrail: exactly these 13 names, no more.
     `write_file` exists (unlike the old all-or-nothing guardrail) but must
     refuse `vocabulary/*.yaml`, `kg/`, and `review/` itself — see the
     `test_write_file_refuses_*` tests below for that half of the guarantee.
     If a future tool is added under a name outside this list, this test fails
     and forces a deliberate look before it ships."""
-    proj = _agent_project(tmp_path)
-    names = {t.to_dict()["name"] for t in build_tools(proj)}
-    assert names == _TOOL_WHITELIST
-
-
-def test_build_openai_tools_matches_the_same_whitelist(tmp_path):
-    """The OpenAI-format tool set (used by the OpenAI-compatible backend) must
-    expose exactly the same tools as the Anthropic Tool Runner format — the
-    guardrail is a property of which tools exist, not of which SDK is
-    wrapping them, so both must agree on the whitelist."""
     proj = _agent_project(tmp_path)
     specs, dispatch = build_openai_tools(proj)
     assert {s["name"] for s in specs} == _TOOL_WHITELIST
