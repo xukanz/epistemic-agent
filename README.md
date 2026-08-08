@@ -67,6 +67,10 @@ cd my-org && claude
 
 **不想开 Claude Code？** `capmap agent` 是同一套首次对话流程的独立实现——不依赖 Claude Code，直接对接任意 OpenAI 兼容端点，见下方[对话式操作](#对话式操作capmap-agent)。
 
+**新建实例需要手写哪些文件？** 严格来说只有 `config/project.yaml`——框架靠这个文件判断"这是不是一个实例"（`find_project()` 从当前目录往上找它）。但你不需要手写它：`capmap init` 生成整套骨架（`config/project.yaml`、`CLAUDE.md`、`schema/kg-schema.yaml`、`vocabulary/`、`skills/*.md`、`scripts/bootstrap.py`、`data/raw/`），`purpose`、schema 裁剪、`bootstrap.py` 都由 `capmap agent`/Claude Code 在首次对话里写出来、念给你确认后落盘。
+
+**原始数据（`data/raw/` 下的东西）必须自己提供**——这是唯一 agent 不会替你生成的东西。它描述的是"怎么解析数据"，不是数据本身，CLAUDE.md 里明确要求"不要猜 URL/API 端点"。给数据的方式随意：已有的 CSV/YAML/JSON 导出直接扔进 `data/raw/`；只有个内部链接就把链接给 agent，它用 `fetch_url` 自己读；只是脑子里有清单，口头列给 agent 也行，它能帮你先写成文件。
+
 写好 `scripts/bootstrap.py` 和 `vocabulary/` 之后，日常循环是：
 
 ```bash
@@ -102,6 +106,16 @@ capmap agent   # 走任何 OpenAI 兼容端点——OpenAI/Portkey/LiteLLM/Azure
 - **受限**——`write_file` 是真实的写入工具，但代码里写死只放行 `config/project.yaml` / `schema/kg-schema.yaml` / `scripts/bootstrap.py` / `data/raw/*`；`vocabulary/`、`kg/`、`review/` 一律拒绝，无论怎么问都不会松口。
 
 新团队接入不用手写任何文件：告诉它数据在哪个文件或哪个链接，它会自己 `read_file` / `fetch_url` 看真实数据、起草 `config/project.yaml` 和 `schema/kg-schema.yaml`（写之前先把内容念出来给你确认），碰到需要自定义解析代码的情况就照 `skills/bootstrap-instance.md` 写 `scripts/bootstrap.py` 自己跑。
+
+**跟它说话大概是这样：**
+
+| 你说 | 它会做什么 |
+|---|---|
+| "我们团队的仓库清单在 `data/raw/repos.yaml`，帮我们把能力地图建起来" | 首次接入：`read_file` 看数据 → 问词表谁维护、队列谁审 → 写 `config/project.yaml`/`schema/kg-schema.yaml`（念给你确认）→ `run_bootstrap` → `ingest_payload` |
+| "现在图谱状态怎么样" | `orient_state` + `review_status`，需要的话再配几个 `view`——问题越具体，调用的工具越少，回得越快 |
+| "有新数据要处理吗，处理一下" | 检查 `data/raw/` 下有没有未摄取的文件，`run_bootstrap` → `ingest_payload` |
+| "导出一个 HTML 图给我" | `export`，只产出派生文件，不碰 `kg/capability-map.json` |
+| "帮我把这个内部系统加进词表" / "这两个团队重复建设，标一下" | 明确说做不到——词表写入和 `DUPLICATES` 边没有对应工具，会告诉你去跑 `capmap vocab-draft` / `capmap review` |
 
 需要设置 `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `OPENAI_MODEL`（模型 ID 按端点自己的命名，没有默认值）；如果端点要求把 key 放在标准 `Authorization: Bearer` 之外的专用 header 上（比如 Portkey 要求 `x-portkey-api-key`），额外设置 `OPENAI_EXTRA_HEADER` 就行。走的是标准 OpenAI `/chat/completions` 协议，所以 Anthropic 自己的 beta OpenAI 兼容端点也能用（`OPENAI_BASE_URL=https://api.anthropic.com/v1`，模型填 Claude 的 model ID）——但那是迁移用的子集，扩展思考等 Claude 原生能力不会暴露出来。
 
