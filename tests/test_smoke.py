@@ -21,6 +21,7 @@ from epistemic_agent.agent.tools import (
     _read_file,
     _read_skill,
     _review_status,
+    _subgraph,
     _vocab_draft,
     _view,
     _write_file,
@@ -959,6 +960,54 @@ def test_view_experts_requires_a_query(tmp_path):
     assert "needs a query" in _view(proj, "experts")
 
 
+def test_subgraph_follows_first_run_protocol_when_no_kg(tmp_path):
+    proj = _agent_project(tmp_path)
+    assert "first-run protocol" in _subgraph(proj, ["repo-a"])
+
+
+def test_subgraph_requires_a_seed(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps({"nodes": [], "edges": []}))
+    assert "at least one seed" in _subgraph(proj, [])
+
+
+def test_subgraph_reports_unresolved_seed(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps(_chain_graph()))
+    out = json.loads(_subgraph(proj, ["nothing-like-this-exists"]))
+    assert out["error"] == "no seed resolved to a node"
+    assert out["resolution"][0]["matched"] == []
+
+
+def test_subgraph_returns_bounded_neighbourhood(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps(_chain_graph()))
+    out = json.loads(_subgraph(proj, ["repo-a"], hops=1))
+    ids = {n["id"] for n in out["subgraph"]["nodes"]}
+    assert ids == {"repo-a", "team-a", "tech-b", "domain-c"}
+    assert out["resolution"][0]["matched"] == ["repo-a"]
+
+
+def test_subgraph_find_path_needs_exactly_two_unambiguous_seeds(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps(_chain_graph()))
+    assert "needs exactly two seeds" in _subgraph(proj, ["repo-a"], find_path=True)
+
+
+def test_subgraph_find_path_returns_a_path(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps(_chain_graph()))
+    out = json.loads(_subgraph(proj, ["team-a", "domain-c"], find_path=True))
+    assert out["path"]["found"]
+    assert out["path"]["paths"][0][0] == "team-a"
+    assert out["path"]["paths"][0][-1] == "domain-c"
+
+
 def test_export_follows_first_run_protocol_when_no_kg(tmp_path):
     proj = _agent_project(tmp_path)
     assert "first-run protocol" in _export(proj)
@@ -1000,6 +1049,7 @@ _TOOL_WHITELIST = {
     "merge_dry_run",
     "merge_apply",
     "view",
+    "subgraph",
     "review_status",
     "read_file",
     "fetch_url",
@@ -1009,7 +1059,7 @@ _TOOL_WHITELIST = {
 
 
 def test_build_openai_tools_never_exposes_a_vocabulary_write_or_review_resolution_tool(tmp_path):
-    """Pins the agent's tool-set guardrail: exactly these 13 names, no more.
+    """Pins the agent's tool-set guardrail: exactly these 14 names, no more.
     `write_file` exists (unlike the old all-or-nothing guardrail) but must
     refuse `vocabulary/*.yaml`, `kg/`, and `review/` itself — see the
     `test_write_file_refuses_*` tests below for that half of the guarantee.
@@ -1036,6 +1086,7 @@ def test_build_openai_tools_dispatch_maps_arguments_correctly(tmp_path):
     assert "needs a query" in dispatch["view"](name="experts")
     assert dispatch["orient_state"]() == _orient_state(proj)
     assert dispatch["review_status"]() == _review_status(proj)
+    assert dispatch["subgraph"](seeds=[]) == _subgraph(proj, [])
 
 
 # ---------------------------------------------------------------------------

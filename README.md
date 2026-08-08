@@ -94,13 +94,13 @@ capmap export -f dot --around "<某个仓库>" --hops 1         # 邻域子图�
 
 ## 对话式操作：capmap agent
 
-`capmap init` 之后不一定要开 Claude Code——`capmap agent` 是一个独立的对话循环，读同一份实例 `CLAUDE.md`，自己调用下面这 13 个工具，而不是等人在终端里敲命令：
+`capmap init` 之后不一定要开 Claude Code——`capmap agent` 是一个独立的对话循环，读同一份实例 `CLAUDE.md`，自己调用下面这 14 个工具，而不是等人在终端里敲命令：
 
 ```bash
 capmap agent   # 走任何 OpenAI 兼容端点——OpenAI/Portkey/LiteLLM/Azure OpenAI/Claude等
 ```
 
-13 个工具：`orient_state` / `read_skill` / `run_bootstrap` / `ingest_payload` / `vocab_draft` / `merge_dry_run` / `merge_apply` / `view` / `review_status` / `read_file` / `fetch_url` / `write_file` / `export`。Guardrail 用了两种不同机制，刻意区分：
+14 个工具：`orient_state` / `read_skill` / `run_bootstrap` / `ingest_payload` / `vocab_draft` / `merge_dry_run` / `merge_apply` / `view` / `subgraph` / `review_status` / `read_file` / `fetch_url` / `write_file` / `export`。`subgraph` 是 5 个固定视图之外的开放式检索原语——给一个或多个节点，返回邻域子图或两点间最短路径，供 agent 在下一轮自己组织语言回答，本身不生成结论。Guardrail 用了两种不同机制，刻意区分：
 
 - **不存在**——写词表、解决审查队列条目、断言 `DUPLICATES` 边没有对应的工具，物理上调不到，不是靠它自觉。
 - **受限**——`write_file` 是真实的写入工具，但代码里写死只放行 `config/project.yaml` / `schema/kg-schema.yaml` / `scripts/bootstrap.py` / `data/raw/*`；`vocabulary/`、`kg/`、`review/` 一律拒绝，无论怎么问都不会松口。
@@ -149,13 +149,14 @@ epistemic_agent/
   analysis/
     views.py               coverage / duplicates / gaps / experts / risk
     inspect.py             capmap show：单节点钻取
+    subgraph.py             capmap subgraph：有界邻域子图 / 最短路径（GraphRAG 检索原语）
   export/
     formats.py             GraphML / GEXF / Cypher / DOT
     viewer.py + template.html  自包含 HTML 查看器（canvas + 力导向，无 CDN）
   review/                  ReviewItem 契约、JSONL 队列、Textual TUI、emitters
   llm/client.py            多提供商统一接口（可选 LLM 抽取路径）
   agent/                   capmap agent：对话式操作，见上方一节
-    tools.py                13 个工具的纯函数实现 + OpenAI function-calling schema 包装
+    tools.py                14 个工具的纯函数实现 + OpenAI function-calling schema 包装
     prompt.py                系统提示词（复用实例的 CLAUDE.md）
     runtime.py                加载 .env.llm，启动 openai backend
     backends/
