@@ -43,7 +43,7 @@ capmap view duplicates
 
 `instances/acme-corp/` 是一家虚构公司（"Acme Corp"，约 25 个仓库、10 个团队），数据全部是编造的，跑的是和真实验证完全相同的一套流水线。`data/seed.yaml` 里特意埋了几个信号，跑完能在对应视图里直接看到：一对跨团队、同领域、栈高度重合的独立重复投入（`duplicates` 视图的 `independent` 分类），一对同名 fork/副本（`same-name` 分类），几个单团队掌握的技术（`risk` 视图的 bus-factor=1），以及一个大部分仓库都依赖的虚构内部网关（`risk` 视图的内部系统集中度）。跑 [快速开始](#快速开始) 里的 `capmap init` 可以在自己的数据上重复同一条流水线。
 
-- 在线看图谱，不用跑任何命令：**<https://xukanz.github.io/epistemic-agent/>**（`capmap export --format html` 的产物，交互式力导向图，可切换 4 个内置视图）
+- 在线看图谱，不用跑任何命令：**[https://xukanz.github.io/epistemic-agent/](https://xukanz.github.io/epistemic-agent/)**（`capmap export --format html` 的产物，交互式力导向图，可切换 4 个内置视图）
 - 每个命令实际输出什么，逐条贴真实终端输出：[`instances/acme-corp/README.md`](instances/acme-corp/README.md)
 
 ---
@@ -65,7 +65,7 @@ cd my-org && claude
 
 `capmap init` 之后进 Claude Code，agent 会读 `CLAUDE.md` 走首次对话流程：先问清楚这张图给谁看、要回答什么，**再问两个硬前提**（词表从哪来、谁审队列），然后才提 schema 草案。
 
-**不想开 Claude Code？** `capmap agent` 是同一套首次对话流程的独立实现——不依赖 Claude Code，直接对接任意 OpenAI 兼容端点（OpenAI 本身、你们自己的网关，或 Claude），见下方[对话式操作](#对话式操作capmap-agent)。
+**不想开 Claude Code？** `capmap agent` 是同一套首次对话流程的独立实现——不依赖 Claude Code，直接对接任意 OpenAI 兼容端点，见下方[对话式操作](#对话式操作capmap-agent)。
 
 写好 `scripts/bootstrap.py` 和 `vocabulary/` 之后，日常循环是：
 
@@ -93,7 +93,7 @@ capmap export -f dot --around "<某个仓库>" --hops 1         # 邻域子图�
 `capmap init` 之后不一定要开 Claude Code——`capmap agent` 是一个独立的对话循环，读同一份实例 `CLAUDE.md`，自己调用下面这 13 个工具，而不是等人在终端里敲命令：
 
 ```bash
-capmap agent   # 走任何 OpenAI 兼容端点——OpenAI 本身，你们自己的网关（Portkey、LiteLLM、Azure OpenAI 等），或 Claude
+capmap agent   # 走任何 OpenAI 兼容端点——OpenAI/Portkey/LiteLLM/Azure OpenAI/Claude等
 ```
 
 13 个工具：`orient_state` / `read_skill` / `run_bootstrap` / `ingest_payload` / `vocab_draft` / `merge_dry_run` / `merge_apply` / `view` / `review_status` / `read_file` / `fetch_url` / `write_file` / `export`。Guardrail 用了两种不同机制，刻意区分：
