@@ -998,6 +998,46 @@ def test_subgraph_find_path_needs_exactly_two_unambiguous_seeds(tmp_path):
     assert "needs exactly two seeds" in _subgraph(proj, ["repo-a"], find_path=True)
 
 
+def test_subgraph_truncation_never_produces_invalid_json(tmp_path):
+    """Regression: a blind `json.dumps(...)[:N]` string slice cuts some
+    node's property value mid-string on any real-sized graph (long
+    `description`/`_sources` text), handing the model invalid JSON. The fix
+    drops whole nodes and caps individual field lengths instead — this must
+    stay parseable no matter how big the neighbourhood is."""
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    big_kg = {
+        "nodes": [
+            {"id": "hub", "type": "Repo", "properties": {"path": "x/hub"}},
+            *[
+                {
+                    "id": f"leaf-{i}",
+                    "type": "Repo",
+                    "properties": {
+                        "path": f"x/leaf-{i}",
+                        "description": "详细描述 " * 200,
+                        "_sources": "/very/long/path/to/a/source/file.json, " * 20,
+                    },
+                }
+                for i in range(80)
+            ],
+        ],
+        "edges": [
+            {"id": f"e{i}", "type": "USES_TECH", "source": "hub", "target": f"leaf-{i}"}
+            for i in range(80)
+        ],
+    }
+    proj.kg_path.write_text(json.dumps(big_kg))
+
+    out = _subgraph(proj, ["hub"], hops=1, max_nodes=80)
+    data = json.loads(out)  # raises if truncation broke the JSON
+    assert data["subgraph"]["truncated"]
+    assert len(data["subgraph"]["nodes"]) < 80
+    for n in data["subgraph"]["nodes"]:
+        for v in n["properties"].values():
+            assert len(str(v)) <= 161  # 160 chars + the "…" marker
+
+
 def test_subgraph_find_path_returns_a_path(tmp_path):
     proj = _agent_project(tmp_path)
     proj.kg_path.parent.mkdir(parents=True, exist_ok=True)

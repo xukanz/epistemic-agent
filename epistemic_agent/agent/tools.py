@@ -266,6 +266,49 @@ def _view(project: Project, name: str, query: str = "", by: str = "shard", limit
     return json.dumps(rows, ensure_ascii=False, indent=2)[:8000]
 
 
+_MAX_SUBGRAPH_CHARS = 20_000
+_MAX_SUBGRAPH_PROPERTY_CHARS = 160
+
+
+def _compact_node(node: dict) -> dict:
+    """Cap individual property values so one verbose field (a long free-text
+    `description`, a `_sources` file list) doesn't crowd the rest of the
+    neighbourhood out of the char budget — the full value is one `capmap
+    show <id>` away, this tool is about breadth across nodes, not depth on
+    one."""
+    props = {}
+    for k, v in node["properties"].items():
+        s = str(v)
+        props[k] = s if len(s) <= _MAX_SUBGRAPH_PROPERTY_CHARS else s[:_MAX_SUBGRAPH_PROPERTY_CHARS] + "…"
+    return {**node, "properties": props}
+
+
+def _fit_nodes_to_budget(resolution: list[dict], sub: dict, max_chars: int) -> str:
+    """Compact each node's properties, then serialize, dropping the farthest
+    nodes until it fits — never a blind string slice. `bounded_subgraph`
+    already returns nodes closest-first, so dropping from the end drops the
+    least relevant ones; a naive `json.dumps(...)[:max_chars]` would instead
+    cut some node's property value mid-string and hand the model invalid
+    JSON — full raw node properties make that a near certainty on any
+    real-sized graph, not an edge case."""
+    nodes = [_compact_node(n) for n in sub["nodes"]]
+    while True:
+        keep_ids = {n["id"] for n in nodes}
+        candidate = {
+            "resolution": resolution,
+            "subgraph": {
+                "nodes": nodes,
+                "edges": [e for e in sub["edges"] if e["source"] in keep_ids and e["target"] in keep_ids],
+                "seeds": sub["seeds"],
+                "truncated": sub["truncated"] or len(nodes) < len(sub["nodes"]),
+            },
+        }
+        payload = json.dumps(candidate, ensure_ascii=False, indent=2)
+        if len(payload) <= max_chars or not nodes:
+            return payload
+        nodes.pop()
+
+
 def _subgraph(
     project: Project,
     seeds: list[str],
@@ -305,12 +348,10 @@ def _subgraph(
             )
         a, b = resolution[0]["matched"][0], resolution[1]["matched"][0]
         result = {"resolution": resolution, "path": path_between(idx, a, b, max_hops=hops)}
-    else:
-        result = {
-            "resolution": resolution,
-            "subgraph": bounded_subgraph(idx, resolved_ids, hops=hops, max_nodes=max_nodes),
-        }
-    return json.dumps(result, ensure_ascii=False, indent=2)[:8000]
+        return json.dumps(result, ensure_ascii=False, indent=2)[:_MAX_SUBGRAPH_CHARS]
+
+    sub = bounded_subgraph(idx, resolved_ids, hops=hops, max_nodes=max_nodes)
+    return _fit_nodes_to_budget(resolution, sub, _MAX_SUBGRAPH_CHARS)
 
 
 def _review_status(project: Project) -> str:
