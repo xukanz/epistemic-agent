@@ -9,6 +9,7 @@
     capmap vocab              List vocabulary shards
     capmap vocab-draft        Cluster ungrounded labels into a draft vocabulary
     capmap view <name>        Coverage / duplicates / gaps / experts / risk
+    capmap subgraph <seeds>   Neighbourhood subgraph, or --find-path between two nodes
     capmap ingest <payload>   Write a payload into the KG
     capmap agent              Start an interactive, tool-using agent session
 
@@ -388,6 +389,77 @@ def show(
         return
     console.print(f"[dim]（{how}）[/dim]")
     render_node(console, info, show_all_teams=all_teams)
+
+
+# ---------------------------------------------------------------------------
+# capmap subgraph
+
+
+@app.command()
+def subgraph(
+    seeds: list[str] = typer.Argument(..., help="节点 ID、路径，或标签/名字的一部分——可传多个"),
+    hops: int = typer.Option(2, "--hops", help="邻域跳数，或配合 --find-path 时的最大路径长度"),
+    max_nodes: int = typer.Option(60, "--max-nodes", help="子图节点数硬上限，按跳数距离由近到远保留"),
+    find_path: bool = typer.Option(False, "--find-path", help="正好两个种子时，找最短路径而不是邻域"),
+    json_out: bool = typer.Option(False, "--json"),
+):
+    """从一个或多个节点出发取邻域子图，或两点间最短路径——5 个固定视图之外的开放式检索原语。"""
+    from epistemic_agent.analysis import views as V
+    from epistemic_agent.analysis.inspect import resolve_node
+    from epistemic_agent.analysis.subgraph import bounded_subgraph, path_between
+
+    proj = find_project()
+    idx = V.GraphIndex(proj.load_kg())
+    vocab = proj.vocabulary()
+
+    resolution = []
+    resolved_ids: list[str] = []
+    for q in seeds:
+        ids, how = resolve_node(idx, q, vocab)
+        resolution.append({"query": q, "matched": ids, "how": how})
+        resolved_ids.extend(ids)
+        if not ids:
+            console.print(f"[yellow]找不到[/yellow] {q!r}（{how}）")
+
+    if not resolved_ids:
+        console.print("[red]没有一个种子能解析到节点[/red]")
+        raise typer.Exit(1)
+
+    if find_path:
+        if len(seeds) != 2 or any(len(r["matched"]) != 1 for r in resolution):
+            console.print("[red]--find-path 需要正好两个种子，且每个都能唯一解析到一个节点[/red]")
+            for r in resolution:
+                console.print(f"  {r['query']!r} → {r['matched']}（{r['how']}）")
+            raise typer.Exit(1)
+        a, b = resolution[0]["matched"][0], resolution[1]["matched"][0]
+        result = path_between(idx, a, b, max_hops=hops)
+        if json_out:
+            console.print_json(json.dumps(result, ensure_ascii=False))
+            return
+        if not result["found"]:
+            console.print(f"[yellow]{idx.label(a)} 和 {idx.label(b)} 之间在 {hops} 跳内没有路径[/yellow]")
+            return
+        for p in result["paths"]:
+            console.print("  " + " ".join(
+                idx.label(item) if i % 2 == 0 else f"--[{item}]-->" for i, item in enumerate(p)
+            ))
+        return
+
+    sub = bounded_subgraph(idx, resolved_ids, hops=hops, max_nodes=max_nodes)
+    if json_out:
+        console.print_json(json.dumps(sub, ensure_ascii=False))
+        return
+    console.print(
+        f"[bold]{len(sub['nodes'])} 节点 / {len(sub['edges'])} 边[/bold]"
+        + ("  [yellow](已按 --max-nodes 截断)[/yellow]" if sub["truncated"] else "")
+    )
+    from rich.table import Table
+    t = Table(box=None)
+    for c in ("id", "类型", "标签"):
+        t.add_column(c, overflow="fold")
+    for n in sub["nodes"]:
+        t.add_row(n["id"], n["type"], n["label"])
+    console.print(t)
 
 
 # ---------------------------------------------------------------------------

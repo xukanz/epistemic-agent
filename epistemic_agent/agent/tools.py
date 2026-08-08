@@ -266,6 +266,94 @@ def _view(project: Project, name: str, query: str = "", by: str = "shard", limit
     return json.dumps(rows, ensure_ascii=False, indent=2)[:8000]
 
 
+_MAX_SUBGRAPH_CHARS = 20_000
+_MAX_SUBGRAPH_PROPERTY_CHARS = 160
+
+
+def _compact_node(node: dict) -> dict:
+    """Cap individual property values so one verbose field (a long free-text
+    `description`, a `_sources` file list) doesn't crowd the rest of the
+    neighbourhood out of the char budget — the full value is one `capmap
+    show <id>` away, this tool is about breadth across nodes, not depth on
+    one."""
+    props = {}
+    for k, v in node["properties"].items():
+        s = str(v)
+        props[k] = s if len(s) <= _MAX_SUBGRAPH_PROPERTY_CHARS else s[:_MAX_SUBGRAPH_PROPERTY_CHARS] + "…"
+    return {**node, "properties": props}
+
+
+def _fit_nodes_to_budget(resolution: list[dict], sub: dict, max_chars: int) -> str:
+    """Compact each node's properties, then serialize, dropping the farthest
+    nodes until it fits — never a blind string slice. `bounded_subgraph`
+    already returns nodes closest-first, so dropping from the end drops the
+    least relevant ones; a naive `json.dumps(...)[:max_chars]` would instead
+    cut some node's property value mid-string and hand the model invalid
+    JSON — full raw node properties make that a near certainty on any
+    real-sized graph, not an edge case."""
+    nodes = [_compact_node(n) for n in sub["nodes"]]
+    while True:
+        keep_ids = {n["id"] for n in nodes}
+        candidate = {
+            "resolution": resolution,
+            "subgraph": {
+                "nodes": nodes,
+                "edges": [e for e in sub["edges"] if e["source"] in keep_ids and e["target"] in keep_ids],
+                "seeds": sub["seeds"],
+                "truncated": sub["truncated"] or len(nodes) < len(sub["nodes"]),
+            },
+        }
+        payload = json.dumps(candidate, ensure_ascii=False, indent=2)
+        if len(payload) <= max_chars or not nodes:
+            return payload
+        nodes.pop()
+
+
+def _subgraph(
+    project: Project,
+    seeds: list[str],
+    hops: int = 2,
+    max_nodes: int = 60,
+    find_path: bool = False,
+) -> str:
+    if not project.kg_path.exists():
+        return _NO_KG.format(path=project.kg_path)
+    from epistemic_agent.analysis import views as V
+    from epistemic_agent.analysis.inspect import resolve_node
+    from epistemic_agent.analysis.subgraph import bounded_subgraph, path_between
+
+    if not seeds:
+        return "Pass at least one seed — a node id, repo path, or a free-text label to resolve."
+
+    idx = V.GraphIndex(project.load_kg())
+    vocabulary = project.vocabulary()
+    resolution: list[dict] = []
+    resolved_ids: list[str] = []
+    for q in seeds:
+        ids, how = resolve_node(idx, q, vocabulary)
+        resolution.append({"query": q, "matched": ids, "how": how})
+        resolved_ids.extend(ids)
+
+    if not resolved_ids:
+        return json.dumps(
+            {"resolution": resolution, "error": "no seed resolved to a node"},
+            ensure_ascii=False, indent=2,
+        )
+
+    if find_path:
+        if len(seeds) != 2 or any(len(r["matched"]) != 1 for r in resolution):
+            return (
+                "find_path needs exactly two seeds, each resolving unambiguously to one "
+                f"node. Got: {json.dumps(resolution, ensure_ascii=False)}"
+            )
+        a, b = resolution[0]["matched"][0], resolution[1]["matched"][0]
+        result = {"resolution": resolution, "path": path_between(idx, a, b, max_hops=hops)}
+        return json.dumps(result, ensure_ascii=False, indent=2)[:_MAX_SUBGRAPH_CHARS]
+
+    sub = bounded_subgraph(idx, resolved_ids, hops=hops, max_nodes=max_nodes)
+    return _fit_nodes_to_budget(resolution, sub, _MAX_SUBGRAPH_CHARS)
+
+
 def _review_status(project: Project) -> str:
     from collections import Counter
 
@@ -531,6 +619,47 @@ def build_openai_tools(project: Project) -> tuple[list[dict], dict]:
             },
         },
         {
+            "name": "subgraph",
+            "description": (
+                "Pull the graph neighbourhood around one or more nodes (or, with "
+                "find_path, the shortest connection between exactly two), as JSON — "
+                "for open-ended questions the five fixed views don't shape-match "
+                "(e.g. multi-hop \"what does X touch\" or \"how are A and B "
+                "connected\"). Each seed is resolved the same way show/experts "
+                "resolve a query: exact id/path, then vocabulary grounding + "
+                "substring match — ambiguous or unmatched seeds are reported, not "
+                "silently dropped. This is retrieval only, no narration: read the "
+                "returned nodes/edges and answer in your own next message, citing "
+                "specific node ids/labels — never state a fact this JSON doesn't contain."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "seeds": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "node ids, repo paths, or free-text labels to resolve.",
+                    },
+                    "hops": {
+                        "type": "integer",
+                        "description": "neighbourhood radius, or max path length with find_path. Default 2.",
+                    },
+                    "max_nodes": {
+                        "type": "integer",
+                        "description": "hard cap on returned nodes, closest-first. Default 60.",
+                    },
+                    "find_path": {
+                        "type": "boolean",
+                        "description": (
+                            "with exactly two unambiguous seeds, return shortest "
+                            "path(s) instead of a neighbourhood."
+                        ),
+                    },
+                },
+                "required": ["seeds"],
+            },
+        },
+        {
             "name": "review_status",
             "description": (
                 "List pending review-queue items and counts by type. Read-only — "
@@ -640,6 +769,13 @@ def build_openai_tools(project: Project) -> tuple[list[dict], dict]:
             query=kw.get("query", ""),
             by=kw.get("by", "shard"),
             limit=kw.get("limit", 20),
+        ),
+        "subgraph": lambda **kw: _subgraph(
+            project,
+            kw["seeds"],
+            hops=kw.get("hops", 2),
+            max_nodes=kw.get("max_nodes", 60),
+            find_path=kw.get("find_path", False),
         ),
         "review_status": lambda **kw: _review_status(project),
         "read_file": lambda **kw: _read_file(kw["path"]),

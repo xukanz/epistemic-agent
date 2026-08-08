@@ -21,6 +21,7 @@ from epistemic_agent.agent.tools import (
     _read_file,
     _read_skill,
     _review_status,
+    _subgraph,
     _vocab_draft,
     _view,
     _write_file,
@@ -609,6 +610,86 @@ def test_describe_node_groups_edges_and_teams():
 
 
 # ---------------------------------------------------------------------------
+# Subgraph (GraphRAG retrieval primitive — not wired into CLI/agent yet)
+
+
+def _chain_graph() -> dict:
+    """A > B > C > D repo/team/domain chain, plus an isolated island, so BFS
+    distance ordering and unreachable-target handling both have something to
+    bite on."""
+    return {
+        "nodes": [
+            {"id": "repo-a", "type": "Repo", "properties": {"path": "a/svc"}},
+            {"id": "team-a", "type": "Team", "properties": {"name": "a"}},
+            {"id": "tech-b", "type": "TechStack", "properties": {"label": "B"}},
+            {"id": "domain-c", "type": "Domain", "properties": {"label": "C"}},
+            {"id": "repo-island", "type": "Repo", "properties": {"path": "z/island"}},
+        ],
+        "edges": [
+            {"id": "1", "type": "OWNED_BY", "source": "repo-a", "target": "team-a"},
+            {"id": "2", "type": "USES_TECH", "source": "repo-a", "target": "tech-b"},
+            {"id": "3", "type": "IN_DOMAIN", "source": "repo-a", "target": "domain-c"},
+        ],
+    }
+
+
+def test_bounded_subgraph_stays_within_hops():
+    from epistemic_agent.analysis.subgraph import bounded_subgraph
+
+    idx = V.GraphIndex(_chain_graph())
+    result = bounded_subgraph(idx, ["repo-a"], hops=1)
+    ids = {n["id"] for n in result["nodes"]}
+    assert ids == {"repo-a", "team-a", "tech-b", "domain-c"}
+    assert not result["truncated"]
+    assert "repo-island" not in ids
+
+
+def test_bounded_subgraph_truncates_by_max_nodes_but_keeps_seeds():
+    from epistemic_agent.analysis.subgraph import bounded_subgraph
+
+    idx = V.GraphIndex(_chain_graph())
+    result = bounded_subgraph(idx, ["repo-a"], hops=2, max_nodes=2)
+    ids = {n["id"] for n in result["nodes"]}
+    assert "repo-a" in ids
+    assert len(ids) == 2
+    assert result["truncated"]
+
+
+def test_bounded_subgraph_ignores_unknown_seeds():
+    from epistemic_agent.analysis.subgraph import bounded_subgraph
+
+    idx = V.GraphIndex(_chain_graph())
+    result = bounded_subgraph(idx, ["does-not-exist"], hops=2)
+    assert result == {"nodes": [], "edges": [], "seeds": [], "truncated": False}
+
+
+def test_path_between_finds_shortest_route():
+    from epistemic_agent.analysis.subgraph import path_between
+
+    idx = V.GraphIndex(_chain_graph())
+    result = path_between(idx, "team-a", "domain-c", max_hops=4)
+    assert result["found"]
+    assert all(p[0] == "team-a" and p[-1] == "domain-c" for p in result["paths"])
+    assert all(len(p) == 5 for p in result["paths"])  # team -> edge -> repo -> edge -> domain
+
+
+def test_path_between_reports_unreachable_nodes():
+    from epistemic_agent.analysis.subgraph import path_between
+
+    idx = V.GraphIndex(_chain_graph())
+    result = path_between(idx, "team-a", "repo-island", max_hops=4)
+    assert result == {"paths": [], "found": False}
+
+
+def test_path_between_same_node_is_a_trivial_path():
+    from epistemic_agent.analysis.subgraph import path_between
+
+    idx = V.GraphIndex(_chain_graph())
+    result = path_between(idx, "repo-a", "repo-a")
+    assert result == {"paths": [["repo-a"]], "found": True}
+
+
+# ---------------------------------------------------------------------------
 # Export
 
 
@@ -879,6 +960,94 @@ def test_view_experts_requires_a_query(tmp_path):
     assert "needs a query" in _view(proj, "experts")
 
 
+def test_subgraph_follows_first_run_protocol_when_no_kg(tmp_path):
+    proj = _agent_project(tmp_path)
+    assert "first-run protocol" in _subgraph(proj, ["repo-a"])
+
+
+def test_subgraph_requires_a_seed(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps({"nodes": [], "edges": []}))
+    assert "at least one seed" in _subgraph(proj, [])
+
+
+def test_subgraph_reports_unresolved_seed(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps(_chain_graph()))
+    out = json.loads(_subgraph(proj, ["nothing-like-this-exists"]))
+    assert out["error"] == "no seed resolved to a node"
+    assert out["resolution"][0]["matched"] == []
+
+
+def test_subgraph_returns_bounded_neighbourhood(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps(_chain_graph()))
+    out = json.loads(_subgraph(proj, ["repo-a"], hops=1))
+    ids = {n["id"] for n in out["subgraph"]["nodes"]}
+    assert ids == {"repo-a", "team-a", "tech-b", "domain-c"}
+    assert out["resolution"][0]["matched"] == ["repo-a"]
+
+
+def test_subgraph_find_path_needs_exactly_two_unambiguous_seeds(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps(_chain_graph()))
+    assert "needs exactly two seeds" in _subgraph(proj, ["repo-a"], find_path=True)
+
+
+def test_subgraph_truncation_never_produces_invalid_json(tmp_path):
+    """Regression: a blind `json.dumps(...)[:N]` string slice cuts some
+    node's property value mid-string on any real-sized graph (long
+    `description`/`_sources` text), handing the model invalid JSON. The fix
+    drops whole nodes and caps individual field lengths instead — this must
+    stay parseable no matter how big the neighbourhood is."""
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    big_kg = {
+        "nodes": [
+            {"id": "hub", "type": "Repo", "properties": {"path": "x/hub"}},
+            *[
+                {
+                    "id": f"leaf-{i}",
+                    "type": "Repo",
+                    "properties": {
+                        "path": f"x/leaf-{i}",
+                        "description": "详细描述 " * 200,
+                        "_sources": "/very/long/path/to/a/source/file.json, " * 20,
+                    },
+                }
+                for i in range(80)
+            ],
+        ],
+        "edges": [
+            {"id": f"e{i}", "type": "USES_TECH", "source": "hub", "target": f"leaf-{i}"}
+            for i in range(80)
+        ],
+    }
+    proj.kg_path.write_text(json.dumps(big_kg))
+
+    out = _subgraph(proj, ["hub"], hops=1, max_nodes=80)
+    data = json.loads(out)  # raises if truncation broke the JSON
+    assert data["subgraph"]["truncated"]
+    assert len(data["subgraph"]["nodes"]) < 80
+    for n in data["subgraph"]["nodes"]:
+        for v in n["properties"].values():
+            assert len(str(v)) <= 161  # 160 chars + the "…" marker
+
+
+def test_subgraph_find_path_returns_a_path(tmp_path):
+    proj = _agent_project(tmp_path)
+    proj.kg_path.parent.mkdir(parents=True, exist_ok=True)
+    proj.kg_path.write_text(json.dumps(_chain_graph()))
+    out = json.loads(_subgraph(proj, ["team-a", "domain-c"], find_path=True))
+    assert out["path"]["found"]
+    assert out["path"]["paths"][0][0] == "team-a"
+    assert out["path"]["paths"][0][-1] == "domain-c"
+
+
 def test_export_follows_first_run_protocol_when_no_kg(tmp_path):
     proj = _agent_project(tmp_path)
     assert "first-run protocol" in _export(proj)
@@ -920,6 +1089,7 @@ _TOOL_WHITELIST = {
     "merge_dry_run",
     "merge_apply",
     "view",
+    "subgraph",
     "review_status",
     "read_file",
     "fetch_url",
@@ -929,7 +1099,7 @@ _TOOL_WHITELIST = {
 
 
 def test_build_openai_tools_never_exposes_a_vocabulary_write_or_review_resolution_tool(tmp_path):
-    """Pins the agent's tool-set guardrail: exactly these 13 names, no more.
+    """Pins the agent's tool-set guardrail: exactly these 14 names, no more.
     `write_file` exists (unlike the old all-or-nothing guardrail) but must
     refuse `vocabulary/*.yaml`, `kg/`, and `review/` itself — see the
     `test_write_file_refuses_*` tests below for that half of the guarantee.
@@ -956,6 +1126,7 @@ def test_build_openai_tools_dispatch_maps_arguments_correctly(tmp_path):
     assert "needs a query" in dispatch["view"](name="experts")
     assert dispatch["orient_state"]() == _orient_state(proj)
     assert dispatch["review_status"]() == _review_status(proj)
+    assert dispatch["subgraph"](seeds=[]) == _subgraph(proj, [])
 
 
 # ---------------------------------------------------------------------------
