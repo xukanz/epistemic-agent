@@ -381,8 +381,8 @@ def build_tools(project: Project) -> list:
     """Return the `@beta_tool`-wrapped tool set for one agent session.
 
     Imports `anthropic` lazily — this is the Anthropic-backend-only path, and
-    the Portkey backend (`build_openai_tools()` below) must be usable with
-    only `portkey-ai` installed, no `anthropic` package at all.
+    the OpenAI-compatible backend (`build_openai_tools()` below) must be
+    usable with only `openai` installed, no `anthropic` package at all.
     """
     from anthropic import beta_tool
 
@@ -574,14 +574,14 @@ def build_tools(project: Project) -> list:
 
 
 # ---------------------------------------------------------------------------
-# OpenAI/Portkey-style function-calling tools
+# OpenAI-compatible function-calling tools
 
 
 def build_openai_tools(project: Project) -> tuple[list[dict], dict]:
     """The same tools as `build_tools()`, in OpenAI function-calling shape.
 
     Anthropic's `@beta_tool` infers a JSON Schema from type hints; there's no
-    equivalent for the OpenAI/Portkey wire format, so the schemas here are
+    equivalent for the OpenAI wire format, so the schemas here are
     written out by hand. The whitelist must stay identical to `build_tools()`
     — see that function's guarantees in this module's docstring — which is
     why both are pinned by the same test.

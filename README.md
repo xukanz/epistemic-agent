@@ -93,8 +93,8 @@ capmap export -f dot --around "<某个仓库>" --hops 1         # 邻域子图�
 `capmap init` 之后不一定要开 Claude Code——`capmap agent` 是一个独立的对话循环，读同一份实例 `CLAUDE.md`，自己调用下面这 13 个工具，而不是等人在终端里敲命令：
 
 ```bash
-capmap agent                    # 默认：直连 Anthropic API（Claude API + Tool Runner）
-capmap agent --backend portkey  # 走你们自己的 OpenAI 兼容网关（Portkey 或类似产品）
+capmap agent                  # 默认：直连 Anthropic API（Claude API + Tool Runner）
+capmap agent --backend openai  # 走任何 OpenAI 兼容端点：OpenAI 本身，或你们自己的网关（Portkey、LiteLLM、Azure OpenAI 等）
 ```
 
 两个 backend 共用一套工具：`orient_state` / `read_skill` / `run_bootstrap` / `ingest_payload` / `vocab_draft` / `merge_dry_run` / `merge_apply` / `view` / `review_status` / `read_file` / `fetch_url` / `write_file` / `export`。Guardrail 用了两种不同机制，刻意区分：
@@ -104,7 +104,7 @@ capmap agent --backend portkey  # 走你们自己的 OpenAI 兼容网关（Portk
 
 新团队接入不用手写任何文件：告诉它数据在哪个文件或哪个链接，它会自己 `read_file` / `fetch_url` 看真实数据、起草 `config/project.yaml` 和 `schema/kg-schema.yaml`（写之前先把内容念出来给你确认），碰到需要自定义解析代码的情况就照 `skills/bootstrap-instance.md` 写 `scripts/bootstrap.py` 自己跑。
 
-`--backend portkey` 需要设置 `PORTKEY_BASE_URL` / `PORTKEY_API_KEY` / `PORTKEY_MODEL`（模型 ID 按你们网关的命名，没有默认值）；`anthropic`（默认）走标准的 `ANTHROPIC_API_KEY` / `ant auth login`。
+`--backend openai` 需要设置 `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `OPENAI_MODEL`（模型 ID 按端点自己的命名，没有默认值）；如果端点要求把 key 放在标准 `Authorization: Bearer` 之外的专用 header 上（比如 Portkey 要求 `x-portkey-api-key`），额外设置 `OPENAI_EXTRA_HEADER` 就行。`anthropic`（默认）走标准的 `ANTHROPIC_API_KEY` / `ant auth login`。
 
 ---
 
@@ -147,7 +147,7 @@ epistemic_agent/
     runtime.py                按 backend 分发
     backends/
       anthropic_backend.py   Claude API + Tool Runner
-      portkey_backend.py     OpenAI 兼容网关（Portkey 等）
+      openai_backend.py      OpenAI 兼容端点（OpenAI 本身、Portkey、LiteLLM 等）
   project.py               Project 路径解析，cli.py 和 agent/ 共用
   cli.py                   capmap 命令
   template/                新实例脚手架（CLAUDE.md + 7 个 skill + schema + config）

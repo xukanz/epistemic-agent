@@ -6,6 +6,7 @@ they are regression tests rather than coverage decoration.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -941,7 +942,7 @@ def test_build_tools_never_exposes_a_vocabulary_write_or_review_resolution_tool(
 
 
 def test_build_openai_tools_matches_the_same_whitelist(tmp_path):
-    """The OpenAI/Portkey-format tool set (used by the Portkey backend) must
+    """The OpenAI-format tool set (used by the OpenAI-compatible backend) must
     expose exactly the same tools as the Anthropic Tool Runner format — the
     guardrail is a property of which tools exist, not of which SDK is
     wrapping them, so both must agree on the whitelist."""
@@ -1066,3 +1067,75 @@ def test_write_file_refuses_invalid_yaml(tmp_path):
     msg = _write_file(proj, "config/project.yaml", "name: [unterminated\n")
     assert "Refused" in msg
     assert "valid YAML" in msg
+
+
+# ---------------------------------------------------------------------------
+# .env.llm loading
+
+
+def test_load_env_file_sets_undefined_vars(tmp_path, monkeypatch):
+    from epistemic_agent.agent.runtime import _load_env_file
+
+    monkeypatch.delenv("OPENAI_TEST_KEY", raising=False)
+    (tmp_path / ".env.llm").write_text(
+        "# a comment\n\nOPENAI_TEST_KEY=\"from-file\"\nMALFORMED LINE\n"
+    )
+    _load_env_file(tmp_path)
+    assert os.environ["OPENAI_TEST_KEY"] == "from-file"
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        # The bug: a copy-pasted example line's trailing comment used to
+        # become part of the value, e.g. a model ID glued to "# no default
+        # — deployment-specific".
+        ("us.anthropic.claude-opus-5   # no default — deployment-specific", "us.anthropic.claude-opus-5"),
+        ('"quoted#value"', "quoted#value"),  # '#' inside quotes is literal
+        ("https://example.com/v1#frag   # trailing comment", "https://example.com/v1#frag"),
+        ("plain-value", "plain-value"),
+        ("#just a comment", ""),
+    ],
+)
+def test_strip_env_value_removes_inline_comments(raw, expected):
+    from epistemic_agent.agent.runtime import _strip_env_value
+
+    assert _strip_env_value(raw) == expected
+
+
+def test_load_env_file_strips_inline_comment_on_the_model_id(tmp_path, monkeypatch):
+    """Regression: OPENAI_MODEL copy-pasted from .env.llm.example with its
+    trailing comment intact used to print
+    'via OpenAI-compatible endpoint (MODEL   # no default — deployment-specific).'
+    instead of a clean model name."""
+    from epistemic_agent.agent.runtime import _load_env_file
+
+    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+    (tmp_path / ".env.llm").write_text(
+        "OPENAI_MODEL=us.anthropic.claude-opus-5   # no default — deployment-specific\n"
+    )
+    _load_env_file(tmp_path)
+    assert os.environ["OPENAI_MODEL"] == "us.anthropic.claude-opus-5"
+
+
+def test_load_env_file_never_overrides_an_already_exported_var(tmp_path, monkeypatch):
+    """A real shell export must win over the file — the file is a fallback,
+    not a way to silently override what the user already set."""
+    from epistemic_agent.agent.runtime import _load_env_file
+
+    monkeypatch.setenv("OPENAI_TEST_KEY", "from-shell")
+    (tmp_path / ".env.llm").write_text("OPENAI_TEST_KEY=from-file\n")
+    _load_env_file(tmp_path)
+    assert os.environ["OPENAI_TEST_KEY"] == "from-shell"
+
+
+def test_load_env_file_closest_directory_wins(tmp_path, monkeypatch):
+    monkeypatch.delenv("OPENAI_TEST_KEY", raising=False)
+    from epistemic_agent.agent.runtime import _load_env_file
+
+    (tmp_path / ".env.llm").write_text("OPENAI_TEST_KEY=root\n")
+    nested = tmp_path / "instances" / "your-team"
+    nested.mkdir(parents=True)
+    (nested / ".env.llm").write_text("OPENAI_TEST_KEY=instance\n")
+    _load_env_file(nested)
+    assert os.environ["OPENAI_TEST_KEY"] == "instance"

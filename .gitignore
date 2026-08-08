@@ -9,7 +9,9 @@ build/
 .ruff_cache/
 
 # Credentials — never committed, whatever provider they're for.
+# Exception: the .example template has no real secrets and should be committed.
 .env*
+!.env.llm.example
 
 # Instance runtime artefacts. The KG, changelog, and review queue *are*
 # committed — they are the audit trail. Regenerable intermediates are not.

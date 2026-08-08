@@ -23,11 +23,13 @@ llm = ["openai>=1.0", "anthropic>=0.25"]
 # one doesn't drag in a dependency the other doesn't use.
 # anthropic: needs the Tool Runner beta (client.beta.messages.tool_runner,
 #   anthropic.beta_tool), far newer than the plain chat/chat_json path `llm` needs.
-# portkey: for organisations running an OpenAI-compatible gateway (Portkey or
-#   similar) in front of Bedrock/Azure/etc. instead of calling Anthropic directly.
+# openai: for OpenAI itself, or any gateway that speaks the same
+#   `/chat/completions` wire format (Portkey, LiteLLM, Azure OpenAI, a proxy
+#   in front of Bedrock, ...). Uses the plain `openai` SDK; gateways that need
+#   the key on a non-standard header set `OPENAI_EXTRA_HEADER` for it.
 agent-anthropic = ["anthropic>=0.120.0"]
-agent-portkey = ["portkey-ai>=1.0"]
-agent = ["epistemic-agent[agent-anthropic,agent-portkey]"]
+agent-openai = ["openai>=1.0"]
+agent = ["epistemic-agent[agent-anthropic,agent-openai]"]
 all = ["epistemic-agent[tui,llm,agent]"]
 dev = ["pytest>=8.0", "ruff>=0.4"]
 

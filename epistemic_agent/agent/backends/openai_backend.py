@@ -1,31 +1,47 @@
-"""Portkey (or any OpenAI-compatible gateway) backend — function calling.
+"""OpenAI-compatible backend — function calling, works with any provider or
+gateway that speaks the `/chat/completions` wire format.
 
-Portkey speaks OpenAI's `/chat/completions` wire format, not Anthropic's
-native Messages API — `response.choices[0].message`, not `response.content`;
-`tools`/`tool_calls`, not `tool_use`/`tool_result` blocks. That's why this is
-a separate backend rather than pointing `anthropic.Anthropic` at a different
-`base_url`: the two APIs are not compatible enough for that.
+This is not "the OpenAI backend" in the sense of only working with OpenAI's
+own API — it's the backend for anything that speaks OpenAI's wire format:
+Portkey, LiteLLM, Azure OpenAI, a self-hosted vLLM server, or OpenAI itself.
+That format is `response.choices[0].message`, `tools`/`tool_calls` — not
+Anthropic's native Messages API (`response.content`, `tool_use`/`tool_result`
+blocks). That's why this is a separate backend rather than pointing
+`anthropic.Anthropic` at a different `base_url`: the two APIs are not
+compatible enough for that.
 
-This backend is deliberately provider-agnostic — it knows nothing about which
-model catalogue or ID format sits behind your gateway. Some deployments
-front Bedrock (which needs a `us.`/`eu.` cross-region inference prefix on
-Claude model IDs), others front Azure OpenAI or a direct Anthropic passthrough
-with their own ID conventions — consult your own gateway's onboarding docs
-for the endpoint and the exact model ID to use. Configuration is three env
-vars, all required except the model override:
+Implemented with the plain `openai` SDK, not a provider-specific package —
+`openai.OpenAI(base_url=..., api_key=..., default_headers=...)` works against
+any endpoint of this shape. Some gateways (Portkey included) additionally
+require the key on a specific header rather than (or in addition to) the
+standard `Authorization: Bearer` the SDK sends automatically — that's what
+`OPENAI_EXTRA_HEADER` is for below.
 
-    PORTKEY_BASE_URL   your gateway's endpoint, e.g. https://<gateway>/v1
-    PORTKEY_API_KEY    the API key Portkey issued for this workspace/config
-    PORTKEY_MODEL       model ID exactly as your gateway expects it — there
+This backend is deliberately provider-agnostic beyond that — it knows nothing
+about which model catalogue or ID format sits behind your endpoint. Some
+deployments front Bedrock (which needs a `us.`/`eu.` cross-region inference
+prefix on Claude model IDs), others front Azure OpenAI, OpenAI directly, or a
+gateway with its own ID conventions — consult your provider's docs for the
+endpoint and the exact model ID to use. Configuration:
+
+    OPENAI_BASE_URL     the endpoint, e.g. https://api.openai.com/v1 or your
+                         gateway's URL
+    OPENAI_API_KEY      your API key, sent as `Authorization: Bearer ...`
+    OPENAI_MODEL        model ID exactly as the endpoint expects it — there
                          is no default, because the right value is entirely
                          deployment-specific
+    OPENAI_EXTRA_HEADER optional — a header name to also carry the API key
+                         on, for gateways that need it there instead of (or
+                         in addition to) Bearer auth. Portkey needs this set
+                         to `x-portkey-api-key`; most OpenAI-compatible
+                         endpoints don't need it at all.
 """
 from __future__ import annotations
 
 import json
 import os
 
-from portkey_ai import Portkey
+from openai import OpenAI
 from rich.console import Console
 
 from epistemic_agent.agent.prompt import build_system_prompt
@@ -40,22 +56,24 @@ MAX_TOOL_ROUNDS = 20
 
 def run_repl(project: Project, model: str | None = None) -> None:
     console = Console()
-    endpoint = os.environ.get("PORTKEY_BASE_URL")
-    api_key = os.environ.get("PORTKEY_API_KEY")
-    model = model or os.environ.get("PORTKEY_MODEL")
+    endpoint = os.environ.get("OPENAI_BASE_URL")
+    api_key = os.environ.get("OPENAI_API_KEY")
+    model = model or os.environ.get("OPENAI_MODEL")
+    extra_header = os.environ.get("OPENAI_EXTRA_HEADER")
     missing = [
         name for name, val in [
-            ("PORTKEY_BASE_URL", endpoint), ("PORTKEY_API_KEY", api_key), ("PORTKEY_MODEL", model),
+            ("OPENAI_BASE_URL", endpoint), ("OPENAI_API_KEY", api_key), ("OPENAI_MODEL", model),
         ] if not val
     ]
     if missing:
         console.print(
-            f"[red]Missing configuration:[/red] {', '.join(missing)}. See your gateway's "
-            "onboarding docs for the endpoint, API key, and the exact model ID it expects."
+            f"[red]Missing configuration:[/red] {', '.join(missing)}. See your provider's "
+            "docs for the endpoint, API key, and the exact model ID it expects."
         )
         return
 
-    client = Portkey(api_key=api_key, base_url=endpoint)
+    default_headers = {extra_header: api_key} if extra_header else None
+    client = OpenAI(api_key=api_key, base_url=endpoint, default_headers=default_headers)
     specs, dispatch = build_openai_tools(project)
     tools = [
         {"type": "function", "function": {k: s[k] for k in ("name", "description", "parameters")}}
@@ -64,7 +82,8 @@ def run_repl(project: Project, model: str | None = None) -> None:
     messages: list = [{"role": "system", "content": build_system_prompt(project)}]
 
     console.print(
-        f"[bold]{project.name}[/bold] — capmap agent via Portkey ({model}). Type 'exit' to quit.\n"
+        f"[bold]{project.name}[/bold] — capmap agent via OpenAI-compatible endpoint ({model}). "
+        "Type 'exit' to quit.\n"
     )
     while True:
         try:
@@ -88,7 +107,7 @@ def run_repl(project: Project, model: str | None = None) -> None:
             console.print(f"[red]Request failed:[/red] {exc}")
 
 
-def _run_turn(client: Portkey, model: str, messages: list, tools: list, dispatch: dict,
+def _run_turn(client: OpenAI, model: str, messages: list, tools: list, dispatch: dict,
               console: Console) -> None:
     for _ in range(MAX_TOOL_ROUNDS):
         resp = client.chat.completions.create(
