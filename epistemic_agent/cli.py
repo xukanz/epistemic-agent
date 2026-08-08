@@ -639,7 +639,7 @@ def agent(
     backend: Optional[str] = typer.Option(
         None,
         "--backend",
-        help="anthropic | openai. Default: openai if OPENAI_BASE_URL is set, else anthropic.",
+        help="anthropic | openai. Default: openai (or $CAPMAP_AGENT_BACKEND if set).",
     ),
 ):
     """Start an interactive, tool-using agent session for this instance.
@@ -650,12 +650,12 @@ def agent(
     finalisation, review-queue resolution, and DUPLICATES edges stay
     human-only: there is no tool for them, on either backend.
 
-    Two backends: `anthropic` calls the Claude API directly; `openai` goes
-    through any endpoint that speaks the OpenAI `/chat/completions` wire
-    format — OpenAI itself, or a gateway your organisation runs in front of
-    it (Portkey, LiteLLM, Azure OpenAI, Bedrock, ...) — see
-    `epistemic_agent.agent.backends.openai_backend` for the required env
-    vars and your provider's own onboarding docs for the values.
+    Two backends: `openai` (default) goes through any endpoint that speaks
+    the OpenAI `/chat/completions` wire format — OpenAI itself, or a gateway
+    your organisation runs in front of it (Portkey, LiteLLM, Azure OpenAI,
+    Bedrock, ...) — see `epistemic_agent.agent.backends.openai_backend` for
+    the required env vars and your provider's own onboarding docs for the
+    values. `anthropic` calls the Claude API directly.
     """
     from epistemic_agent.agent.runtime import run_repl
 

@@ -8,8 +8,8 @@ there's a real implementation per backend rather than one client with a
 `onto/client.py`'s `resolve_backend` for the vocabulary (local YAML vs. an MCP
 server): the caller doesn't need to know which one is running underneath.
 
-Default, unconfigured behaviour is direct-to-Anthropic: no `OPENAI_BASE_URL`
-set → `anthropic` backend.
+Default backend is `openai` — override with `--backend anthropic`, or set
+`CAPMAP_AGENT_BACKEND=anthropic` to change the default without a flag.
 """
 from __future__ import annotations
 
@@ -75,9 +75,7 @@ def _load_env_file(start: Path) -> None:
 def run_repl(project: Project, model: str | None = None, backend: str | None = None) -> None:
     _load_env_file(project.root)
 
-    backend = backend or os.environ.get("CAPMAP_AGENT_BACKEND")
-    if not backend:
-        backend = "openai" if os.environ.get("OPENAI_BASE_URL") else "anthropic"
+    backend = backend or os.environ.get("CAPMAP_AGENT_BACKEND") or "openai"
 
     if backend == "openai":
         from epistemic_agent.agent.backends.openai_backend import run_repl as _run
