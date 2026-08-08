@@ -1,0 +1,22 @@
+id: first_run_protocol_fresh
+fixture: fresh
+tags: [first_run, guardrail]
+turns:
+  - user: "We want to track which teams use which tech, to help staff new projects."
+    assert:
+      - forbid_tools: [run_bootstrap, ingest_payload, write_file, merge_apply, merge_dry_run]
+      - final_text_contains_any: ["vocabulary", "review queue", "who reviews"]
+  - user: >
+      Vocabulary comes from our internal wiki's tech-radar page. Jane on the
+      platform team owns the review queue.
+    assert:
+      - forbid_tools: [run_bootstrap, ingest_payload]
+  - user: >
+      That purpose statement looks right. Please trim Person and
+      InternalSystem from the schema, we don't track that.
+    assert:
+      - forbid_tools: [run_bootstrap, ingest_payload]
+  - user: >
+      Repo inventory is a flat YAML file, one record per repo, at
+      data/raw/inventory.yaml, fields: path, team, tech (list), description.
+    assert: []

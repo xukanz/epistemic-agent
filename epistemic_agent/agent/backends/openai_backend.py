@@ -42,6 +42,7 @@ endpoint and the exact model ID to use. Configuration:
 """
 from __future__ import annotations
 
+import io
 import json
 import os
 
@@ -58,8 +59,15 @@ from epistemic_agent.project import Project
 MAX_TOOL_ROUNDS = 20
 
 
-def run_repl(project: Project, model: str | None = None) -> None:
-    console = Console()
+def build_client_from_env(model: str | None = None) -> tuple[OpenAI, str]:
+    """Read `OPENAI_BASE_URL`/`OPENAI_API_KEY`/`OPENAI_MODEL`/`OPENAI_EXTRA_HEADER`
+    from the environment and construct the client `run_repl` needs.
+
+    Raises `RuntimeError` (message matches `run_repl`'s prior inline check) if
+    any required value is missing, so callers driving the agent
+    programmatically (the eval harness) can turn that into a clean skip
+    instead of a crash.
+    """
     endpoint = os.environ.get("OPENAI_BASE_URL")
     api_key = os.environ.get("OPENAI_API_KEY")
     model = model or os.environ.get("OPENAI_MODEL")
@@ -70,14 +78,48 @@ def run_repl(project: Project, model: str | None = None) -> None:
         ] if not val
     ]
     if missing:
-        console.print(
-            f"[red]Missing configuration:[/red] {', '.join(missing)}. See your provider's "
-            "docs for the endpoint, API key, and the exact model ID it expects."
+        raise RuntimeError(
+            f"Missing configuration: {', '.join(missing)}. See your provider's docs for the "
+            "endpoint, API key, and the exact model ID it expects."
         )
-        return
-
     default_headers = {extra_header: api_key} if extra_header else None
     client = OpenAI(api_key=api_key, base_url=endpoint, default_headers=default_headers)
+    return client, model
+
+
+def run_scripted(
+    project: Project, user_turns: list[str], *, client: OpenAI, model: str,
+    console: Console | None = None,
+) -> list[dict]:
+    """Drive one full conversation from a fixed list of user turns, with no
+    interactive input, and return the accumulated `messages` transcript.
+
+    `client` is duck-typed the same way `_run_turn` treats it — a real
+    `OpenAI` client or a scripted fake both work — which is what lets the
+    eval harness reuse this for both the no-network fake-LLM tier and the
+    real-endpoint tier instead of re-deriving the system prompt/tools/dispatch
+    wiring `run_repl` already knows how to do.
+    """
+    console = console or Console(file=io.StringIO())
+    specs, dispatch = build_openai_tools(project)
+    tools = [
+        {"type": "function", "function": {k: s[k] for k in ("name", "description", "parameters")}}
+        for s in specs
+    ]
+    messages: list = [{"role": "system", "content": build_system_prompt(project)}]
+    for user_text in user_turns:
+        messages.append({"role": "user", "content": user_text})
+        _run_turn(client, model, messages, tools, dispatch, console)
+    return messages
+
+
+def run_repl(project: Project, model: str | None = None) -> None:
+    console = Console()
+    try:
+        client, model = build_client_from_env(model)
+    except RuntimeError as exc:
+        console.print(f"[red]{exc}[/red]")
+        return
     specs, dispatch = build_openai_tools(project)
     tools = [
         {"type": "function", "function": {k: s[k] for k in ("name", "description", "parameters")}}

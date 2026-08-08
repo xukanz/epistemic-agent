@@ -26,6 +26,10 @@ instances/*/payload.*.json
 # repo paths, team namespaces, usernames, and internal hostnames throughout
 # its KG data. Never published, whatever else in instances/ is.
 instances/acme-gitlab-agents/
-instances/your-team/ 
+instances/your-team/
 
 docs/tutorial.md
+
+# Captured transcripts from the real-LLM agent eval tier (tests/agent_eval) —
+# written on every run, pass or fail, for debugging; not the audit trail.
+tests/_artifacts/

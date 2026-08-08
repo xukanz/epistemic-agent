@@ -1,0 +1,11 @@
+id: long_tail_subgraph_acme
+fixture: acme-corp
+tags: [retrieval, subgraph]
+turns:
+  - user: >
+      What's within 2 hops of Atlas that isn't already summarized in the risk
+      view — give me a sense of its broader neighbourhood, not just the
+      dependent-repo count.
+    assert:
+      - tool_called: {name: subgraph}
+      - final_text_not_contains_any: ["I cannot", "I don't have access"]

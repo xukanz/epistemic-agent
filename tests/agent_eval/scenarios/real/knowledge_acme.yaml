@@ -1,0 +1,14 @@
+id: knowledge_counts_and_duplicates
+fixture: acme-corp
+tags: [knowledge]
+turns:
+  - user: "How many nodes and edges are in the graph right now?"
+    assert:
+      - final_text_matches_number: 71
+      - final_text_matches_number: 149
+  - user: "Are there any duplicate-effort signals I should look at?"
+    assert:
+      - tool_called: {name: view, args: {name: duplicates}}
+      - final_text_matches_number: 3
+      - final_text_not_contains_any: ["these are duplicates", "confirmed duplicate"]
+      - final_text_contains_any: ["human", "confirm", "review"]
