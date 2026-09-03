@@ -439,6 +439,7 @@ def _export(
     node_type: str | None = None,
     around: str | None = None,
     hops: int = 1,
+    lang: str = "zh",
 ) -> str:
     """Render the KG to a visualisation/graph-tool file. Not gated like
     `write_file` — this only ever produces a new derived artefact (e.g.
@@ -451,7 +452,7 @@ def _export(
 
     result = run_export(
         project, fmt=fmt, output=output, default_view=default_view,
-        node_type=node_type, around=around, hops=hops,
+        node_type=node_type, around=around, hops=hops, lang=lang,
     )
     if "error" in result:
         return result["error"]
@@ -740,6 +741,11 @@ def build_openai_tools(project: Project) -> tuple[list[dict], dict]:
                         "description": "centre the export on one node (id or a resolvable label/tech name).",
                     },
                     "hops": {"type": "integer", "description": "how many edges to expand from around."},
+                    "lang": {
+                        "type": "string",
+                        "enum": ["zh", "en"],
+                        "description": "for html — page interface language, default zh.",
+                    },
                 },
                 "required": [],
             },
@@ -789,6 +795,7 @@ def build_openai_tools(project: Project) -> tuple[list[dict], dict]:
             node_type=kw.get("node_type"),
             around=kw.get("around"),
             hops=kw.get("hops", 1),
+            lang=kw.get("lang", "zh"),
         ),
     }
 

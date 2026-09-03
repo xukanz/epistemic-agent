@@ -1,17 +1,19 @@
-[English](README.en.md) · **中文**
+**English** · [中文](README.md)
 
-# acme-corp — 命令与输出速查
+# acme-corp — commands and their output
 
-`acme-corp` 是一家虚构公司：25 个仓库、10 个团队，数据全部编造（见
-`data/seed.yaml` 开头的注释），跑的是和主 [README](../../README.md#现状跑得通有真实产出)
-里描述的真实验证完全相同的一套流水线。这份文档把流水线从头到尾跑一遍，
-每一步贴出真实的终端输出，不用自己装环境也能看懂这套工具做了什么。
+`acme-corp` is a fictional company: 25 repos, 10 teams, every value invented (see the comment at
+the top of `data/seed.yaml`). It runs exactly the same pipeline as the real validation described in
+the main [README](../../README.en.md#status-it-runs-on-real-data). This document walks the pipeline
+from start to finish and pastes the real terminal output of each step, so you can see what the tool
+does without installing anything.
 
-在线看图谱（不用跑任何命令）：**<https://xukanz.github.io/epistemic-agent/>**——
-这就是本文档最后 `capmap export --format html` 那一步的产物。
-（[英文界面版](https://xukanz.github.io/epistemic-agent/index.en.html)，加 `--lang en` 导出。）
+Look at the graph online (no commands to run):
+**<https://xukanz.github.io/epistemic-agent/index.en.html>** — that is the output of the
+`capmap export --format html --lang en` step near the end of this document.
+([Chinese interface](https://xukanz.github.io/epistemic-agent/).)
 
-自己跑一遍：
+Run it yourself:
 
 ```bash
 cd instances/acme-corp
@@ -21,12 +23,32 @@ capmap merge
 capmap health
 ```
 
+> **A note on the pasted output.** The CLI's own chrome — table headers, prompts — is currently
+> Chinese only; `--lang` localises the exported HTML page, not the terminal. The output blocks below
+> are pasted verbatim rather than translated, because they are the real thing. The recurring column
+> headers translate as:
+>
+> | Chinese | English | | Chinese | English |
+> |---|---|---|---|---|
+> | 分片 | shard | | 术语 | term |
+> | 技术数 | technologies | | 状态 | status |
+> | 仓库 / 仓库数 | repos / repo count | | 能力/技术 | capability / technology |
+> | 团队 / 涉及团队 | teams / teams involved | | 唯一团队 | sole team |
+> | 最常用 | most used | | 内部系统 | internal system |
+> | 关系 | relation / relationships | | 依赖仓库 | dependent repos |
+> | 领域 | domain | | 方向 · ← 入 | direction · inbound |
+> | 重合度 | overlap | | 边类型 / 数量 | edge type / count |
+> | 共同技术 | shared technologies | | 邻居类型 / 示例 | neighbour type / examples |
+> | 类型 · 度数 | type · degree | | 接地置信度 | grounding confidence |
+> | 按团队分布 | breakdown by team | | 更新于 · 来源 | updated · sources |
+> | 名称 · 说明 | name · description | | 节点 · 边 | nodes · edges |
+
 ---
 
 ## 1. `python scripts/bootstrap.py --out payload.bootstrap.json`
 
-确定性冷启动：把 `data/seed.yaml` 转成 `capmap ingest` 认识的节点/边格式，
-不涉及任何 LLM 调用。
+Deterministic cold start: turns `data/seed.yaml` into the node/edge shape `capmap ingest`
+understands. No LLM call involved.
 
 ```text
 {
@@ -52,8 +74,9 @@ Payload written to /home/.../instances/acme-corp/payload.bootstrap.json
 
 ## 2. `capmap ingest payload.bootstrap.json`
 
-唯一写入口：把 payload 里的节点标签拿去和词表比对（接地），按三档置信度
-路由，写图谱、写 changelog、更新幂等 manifest。
+The only write path: takes the node labels in the payload, matches them against the vocabulary
+(grounding), routes them by one of three confidence bands, writes the graph, writes the changelog,
+and updates the idempotency manifest.
 
 ```text
 1/1 source files changed
@@ -61,14 +84,14 @@ Grounding: 29 grounded, 1 candidates, 0 ungrounded, 41 structural
 Ingest: +71 nodes, ~0 updated, +149 edges
 ```
 
-`1 candidates` 是 `dbt`——词表里没有这个术语，模糊匹配最高只有 0.50 分，
-落进"待人工审查"那一档，没有被强行接地成别的东西。这条会出现在
-`review/items.jsonl` 里，见第 9 节 `capmap review-status`。
+The `1 candidates` is `dbt` — the vocabulary has no such term, fuzzy matching tops out at 0.50, so
+it lands in the "needs a human" band rather than being forced onto something else. That entry shows
+up in `review/items.jsonl`; see §14, `capmap review-status`.
 
 ## 3. `capmap merge`
 
-按 `config/project.yaml` 里配置的策略（alias / fuzzy_label / natural_key /
-multi_token）折叠别名、查重复，迭代到不动点为止。
+Applies the strategies configured in `config/project.yaml` (alias / fuzzy_label / natural_key /
+multi_token) to collapse aliases and find duplicates, iterating to a fixed point.
 
 ```text
 Merges applied: 0 over 0 round(s)
@@ -78,13 +101,13 @@ dropped 0 duplicate edges, 0 self-loops; 0 properties set from the vocabulary
 Report: kg/merge-report.md
 ```
 
-这份示例数据本来就是干净的合成数据，没有别名冲突，所以 0 次合并——这是
-预期结果，不是流水线没起作用。真实场景里这一步通常会把 `k8s`/`Kubernetes`/
-`K8S` 这类同名异写折叠成一个节点。
+This sample data is clean synthetic data with no alias conflicts, hence 0 merges — that is the
+expected result, not the pipeline failing to fire. On real data this step usually folds things like
+`k8s` / `Kubernetes` / `K8S` into a single node.
 
 ## 4. `capmap health`
 
-生成质量信号 + 能力地图信号，写 `kg/health-manifest.json`。
+Produces quality signals plus capability-map signals, and writes `kg/health-manifest.json`.
 
 ```text
 KG Health Manifest — 2026-08-07T11:31:46
@@ -116,12 +139,12 @@ Capability-map signals
 Manifest written to kg/health-manifest.json
 ```
 
-`Stale nodes = 1` 是 `api-gateway/legacy-router`，`last_commit` 在种子数据里
-故意写成 2025-02-11——一年多没提交，用来演示这个信号。
+`Stale nodes = 1` is `api-gateway/legacy-router`; its `last_commit` is deliberately set to
+2025-02-11 in the seed data — over a year without a commit, to demonstrate the signal.
 
 ## 5. `capmap stats`
 
-比 `health` 更轻量的即时快照，不写文件，纯终端输出。
+A lighter instant snapshot than `health`: writes no files, terminal output only.
 
 ```text
 acme-corp — 71 nodes, 149 edges
@@ -141,8 +164,9 @@ Connectivity: 71 connected, 0 isolated
 
 ## 6. `capmap view coverage`
 
-五个确定性分析视图之一：按词表分片看技术栈分布——哪个方向有多少种技术、
-覆盖了多少仓库和团队。
+One of the five deterministic analysis views: the tech-stack distribution by vocabulary shard — how
+many technologies exist in each direction, and how many repos and teams they cover. (Table title:
+"Tech-stack coverage, by vocabulary shard".)
 
 ```text
 技术栈覆盖（按词表分片）
@@ -169,12 +193,16 @@ Connectivity: 71 connected, 0 isolated
 └──────────────────────┴────────┴──────┴──────┴────────────────────────────────┘
 ```
 
-`(ungrounded)` 那一行就是没进词表的 `dbt`——覆盖视图不会假装它不存在，
-而是单独一行如实标出来。
+The `(ungrounded)` row is `dbt`, which never made it into the vocabulary. The coverage view does not
+pretend it doesn't exist; it reports it honestly on its own row. (`任务调度` is a Chinese-labelled
+vocabulary term meaning "task scheduling" — the seed data includes it to show that node labels are
+not required to be English.)
 
 ## 7. `capmap view duplicates`
 
-跨团队、同领域、技术栈高度重合的仓库对——这份示例数据里特意埋了三个信号。
+Pairs of repos that are cross-team, in the same domain, and share most of a tech stack — this
+sample data has three signals planted in it deliberately. (Table title: "Suspected duplicate effort
+— cross-team, same domain, heavy stack overlap".)
 
 ```text
 疑似重复投入（跨团队、同领域、栈高度重合）
@@ -199,15 +227,21 @@ Connectivity: 71 connected, 0 isolated
 fork/副本，已排到后面。任何一行都要人工判断后才写 DUPLICATES 边。
 ```
 
-三行分别演示了这个视图要区分的三种情况：`growth/model-router` 和
-`platform/agent-gateway` 是两个团队真的各自造了一个网关（`independent`，
-值得人工确认）；`growth/support-agent` 和 `mobile/support-agent` 同名，
-判成 `fork-or-copy`，优先级更低。
+The footer reads: *overlap ≠ duplication. Only `independent` is worth a look; 1 of 3 rows is a
+same-name fork/copy and has been sorted to the bottom. Every row needs a human decision before a
+`DUPLICATES` edge is written.*
+
+The three rows demonstrate the three cases this view has to distinguish. `growth/model-router` and
+`platform/agent-gateway` are two teams that genuinely each built a gateway (`independent`, worth
+confirming with a person); `growth/support-agent` and `mobile/support-agent` share a name and are
+classified `fork-or-copy`, which ranks lower.
 
 ## 8. `capmap view gaps`
 
-词表里有、图里没有（或只有一个仓库）的能力——注意这不等于"没人具备"，
-见输出末尾的两条提示。
+Capabilities that are in the vocabulary but absent from the graph (or present in only one repo).
+Note that this is *not* the same as "nobody has them" — see the two notices at the end of the
+output. (Table title: "Capability gaps — no-repo = in the vocabulary but nobody does it;
+single-repo = exactly 1 repo".)
 
 ```text
 能力缺口（no-repo = 词表里有但没人做；single-repo = 只有 1
@@ -233,14 +267,22 @@ no-repo 只在词表完整且摄取完整时才等于「没人做」，两者都
 的那一步还没跑，不能读作「这些能力没人具备」。
 ```
 
-acme-corp 只覆盖了通用词表 219 个术语里的一小部分（毕竟只有 25 个仓库），
-所以大部分行都是 `no-repo`——这是示例规模小的自然结果，不代表词表设计得
-不好。
+The three notices read: *0 further ungrounded one-off labels are not listed — those are vocabulary
+suggestions, see `vocabulary-suggestions.md`, not capability gaps.* / *`no-repo` only means "nobody
+does it" when both the vocabulary and the ingestion are complete, and neither ever fully is.* /
+*Note: the graph contains no `Pattern` nodes at all, so all 20 `Pattern` terms in the vocabulary
+have been excluded from this view wholesale — that means the Pattern-extraction step has not been
+run, and must not be read as "nobody has these capabilities".*
+
+acme-corp only covers a small slice of the 219 terms in the generic vocabulary (it only has 25
+repos, after all), so most rows are `no-repo`. That is a natural consequence of the example being
+small, not evidence of a badly designed vocabulary.
 
 ## 9. `capmap view experts -q "langgraph"`
 
-给一个技术/能力名，列出所有用过它的仓库，按最近提交排序——"要做这件事该
-找谁"这个问题在这里就是一次查询。
+Give it a technology or capability name and it lists every repo that has used it, sorted by most
+recent commit — "who do I talk to if I want to do this" is a single query here. (Table title:
+"langgraph experts, by most recent commit".)
 
 ```text
 langgraph 专家（按最近提交排序）
@@ -252,10 +294,13 @@ security/access-review-bot  security 2026-05-14  Turns a manual quarterly audit.
 growth/support-agent     growth      2026-03-02  Same assistant as mobile's...
 ```
 
+(`… 13 行，节选：` = "… 13 rows, excerpted:")
+
 ## 10. `capmap view risk`
 
-两张表：谁是"只有一个团队会"的技术（bus factor = 1），谁是"大家都依赖"的
-内部系统（内部锁定）。
+Two tables: which technologies only one team knows (bus factor = 1), and which internal systems
+everybody depends on (internal lock-in). (Table titles: "Single-team capabilities (bus factor = 1)"
+and "Internal-system dependency concentration".)
 
 ```text
 单团队掌握的能力（bus factor = 1）
@@ -291,14 +336,14 @@ growth/support-agent     growth      2026-03-02  Same assistant as mobile's...
 └──────────┴──────────┴──────────┘
 ```
 
-`Atlas`（虚构的内部服务网关）被 16/25 个仓库、8/10 个团队依赖——这就是种子
-数据里刻意设计的"内部锁定"信号：一旦 Atlas 出问题或要下线，影响面比任何
-一个单独的技术选型都大。
+`Atlas` (a fictional internal service gateway) is depended on by 16 of 25 repos and 8 of 10 teams —
+this is the internal lock-in signal deliberately designed into the seed data: if Atlas breaks or
+gets decommissioned, the blast radius is larger than that of any single technology choice.
 
 ## 11. `capmap show atlas`
 
-单节点钻取：属性、关系、按团队分布，三段信息拼出"这个东西是什么、谁在用、
-用得有多集中"。
+Single-node drill-down: properties, relationships, and breakdown by team — three sections that
+together answer "what is this thing, who uses it, and how concentrated is that use".
 
 ```text
 （词表 → is:atlas（Atlas））
@@ -341,30 +386,38 @@ Atlas  sys-atlas
 来源 1 处（--json 看完整路径）
 ```
 
-同一个命令查一个 `Repo` 节点（比如 `capmap show platform/agent-gateway`）
-不会有"按团队分布"这张表——那张表回答的是"这个技术/系统被哪些团队用"，
-一个仓库只属于一个团队，没有分布可言。
+The header line means "vocabulary → is:atlas (Atlas)" — how the name `atlas` was resolved. The
+footer means "grounding confidence 1.0 · updated 2026-08-07 / 1 source (use `--json` for the full
+paths)". `… 另 4 个` in the examples column is "… 4 more".
 
-## 12. `capmap export --format html`
+Running the same command on a `Repo` node (`capmap show platform/agent-gateway`, say) produces no
+"breakdown by team" table — that table answers "which teams use this technology/system", and a repo
+belongs to exactly one team, so there is no distribution to show.
 
-产出这份文档最上面链接的那个网站：自包含的力导向图谱查看器，内置 4 个
-切换视图，不依赖任何网络请求。加 `--lang en` 是同一张图的英文界面版。
+## 12. `capmap export --format html --lang en`
+
+Produces the site linked at the top of this document: a self-contained force-directed graph viewer
+with 4 switchable built-in views, making no network requests. Drop `--lang en` and you get the same
+graph with a Chinese interface (which is what `docs/index.html` is).
 
 ```text
 内置视图
- key     名称         节点  边   说明
- tech    技术共现     5     6    两个技术被 ≥3 个仓库同时使用就连一条边
- team    团队 ↔ 技术  37    54   谁在用什么
- domain  领域 ↔ 技术  17    17   哪块业务用哪些栈（≥2 个仓库才连边）
- full    全图         71    149  所有节点和边。能看结构密度，看不清细节
+ key     名称                节点  边   说明
+ tech    Tech co-occurrence  5     6    Two technologies are linked when ≥3 repos use both
+ team    Team ↔ tech         37    54   Who uses what
+ domain  Domain ↔ tech       17    17   Which parts of the business use which stack (≥2 repos to
+                                        draw an edge)
+ full    Everything          71    149  Every node and edge. Shows structural density, not detail
 已写入 kg/capability-map.html  (52 KB)
-直接双击打开，或 `xdg-open` / `open`。不依赖网络。
+Open directly in a browser (double-click, or xdg-open/open) — no network needed.
 ```
+
+(`内置视图` = "built-in views"; `已写入` = "wrote".)
 
 ## 13. `capmap export --format dot --around growth/support-agent --hops 1`
 
-导出邻域子图，而不是整张图——DOT 格式超过 300 个节点会直接拒绝导出，
-`--around`/`--hops` 是把图裁剪到看得清的规模的办法。
+Exports a neighbourhood subgraph rather than the whole graph. The DOT writer refuses outright above
+300 nodes, and `--around` / `--hops` are how you trim the graph down to something legible.
 
 ```text
 中心节点 1 个（exact path），扩展 1 跳
@@ -373,7 +426,11 @@ Atlas  sys-atlas
 `dot -Tsvg 该文件 -o out.svg`（或 `neato` / `fdp` 布局更适合网状图）。
 ```
 
-产出的 `.dot` 文件内容（可以直接喂给 Graphviz 画图）：
+That reads: *1 centre node (exact path), expanded 1 hop / neighbourhood subgraph: 7 nodes / 6 edges
+/ wrote `around.dot` (1 KB) / `dot -Tsvg <file> -o out.svg` (or the `neato` / `fdp` layouts, which
+suit mesh-like graphs better).*
+
+The resulting `.dot` file (feed it straight to Graphviz):
 
 ```dot
 digraph capability_map {
@@ -398,7 +455,7 @@ digraph capability_map {
 
 ## 14. `capmap review-status`
 
-审查队列的概览——不进队列，只看有什么待处理。
+An overview of the review queue — it does not enter the queue, it just shows what is pending.
 
 ```text
 acme-corp — 1 pending review items
@@ -407,11 +464,10 @@ acme-corp — 1 pending review items
   0.50 Ground 'dbt'?
 ```
 
-就是第 2 步 ingest 时那条 `dbt` 的接地候选。真正处理它要用 `capmap review`
-打开交互式终端界面（TUI）——一次接受/拒绝一条，不适合在这里截图演示；
-队列非空时才需要用它。
+That is the `dbt` grounding candidate from the ingest in step 2. Actually resolving it means running
+`capmap review`, which opens an interactive terminal UI (TUI) — one accept/reject at a time, not
+something worth screenshotting here; you only need it when the queue is non-empty.
 
 ---
 
-在线看效果：**<https://xukanz.github.io/epistemic-agent/>**
-（[英文界面版](https://xukanz.github.io/epistemic-agent/index.en.html)）
+See it live: **<https://xukanz.github.io/epistemic-agent/index.en.html>**

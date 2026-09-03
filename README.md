@@ -1,3 +1,5 @@
+[English](README.en.md) · **中文**
+
 # epistemic-agent
 
 企业内部技术能力地图 —— 用 AI agent 构建并持续维护一张组织级能力图谱，回答四个管理层问题：
@@ -43,7 +45,7 @@ capmap view duplicates
 
 `instances/acme-corp/` 是一家虚构公司（"Acme Corp"，约 25 个仓库、10 个团队），数据全部是编造的，跑的是和真实验证完全相同的一套流水线。`data/seed.yaml` 里特意埋了几个信号，跑完能在对应视图里直接看到：一对跨团队、同领域、栈高度重合的独立重复投入（`duplicates` 视图的 `independent` 分类），一对同名 fork/副本（`same-name` 分类），几个单团队掌握的技术（`risk` 视图的 bus-factor=1），以及一个大部分仓库都依赖的虚构内部网关（`risk` 视图的内部系统集中度）。跑 [快速开始](#快速开始) 里的 `capmap init` 可以在自己的数据上重复同一条流水线。
 
-- 在线看图谱，不用跑任何命令：**[https://xukanz.github.io/epistemic-agent/](https://xukanz.github.io/epistemic-agent/)**（`capmap export --format html` 的产物，交互式力导向图，可切换 4 个内置视图）
+- 在线看图谱，不用跑任何命令：**[https://xukanz.github.io/epistemic-agent/](https://xukanz.github.io/epistemic-agent/)**（`capmap export --format html` 的产物，交互式力导向图，可切换 4 个内置视图；[英文界面版](https://xukanz.github.io/epistemic-agent/index.en.html)）
 - 每个命令实际输出什么，逐条贴真实终端输出：[`instances/acme-corp/README.md`](instances/acme-corp/README.md)
 
 ---
@@ -86,6 +88,7 @@ capmap view risk
 
 capmap show <节点 ID 或技术名>                              # 钻取单个节点
 capmap export -f html                                      # 自包含 HTML 查看器
+capmap export -f html --lang en                            # 同一份图，英文界面
 capmap export -f graphml                                   # 拖进 Gephi / networkx
 capmap export -f dot --around "<某个仓库>" --hops 1         # 邻域子图给 Graphviz
 ```
@@ -152,7 +155,7 @@ epistemic_agent/
     subgraph.py             capmap subgraph：有界邻域子图 / 最短路径（GraphRAG 检索原语）
   export/
     formats.py             GraphML / GEXF / Cypher / DOT
-    viewer.py + template.html  自包含 HTML 查看器（canvas + 力导向，无 CDN）
+    viewer.py + template.html  自包含 HTML 查看器（canvas + 力导向，无 CDN，中/英双语）
   review/                  ReviewItem 契约、JSONL 队列、Textual TUI、emitters
   llm/client.py            多提供商统一接口（可选 LLM 抽取路径）
   agent/                   capmap agent：对话式操作，见上方一节

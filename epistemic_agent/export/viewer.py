@@ -22,6 +22,11 @@ viewer ships several and defaults to the readable one:
 **Layout runs in the browser, not here.** A force simulation is iterative and
 people want to watch it settle and re-run it. Precomputing coordinates in
 Python would need a numeric stack this project does not otherwise depend on.
+
+**UI text is injected, not written into the template.** The viewer ships in
+Chinese and English (`--lang`). Keeping one template and passing `UI_STRINGS`
+through the payload is the only way two locales stay in sync — a forked
+`template.en.html` would drift the first time the layout code changes.
 """
 from __future__ import annotations
 
@@ -170,31 +175,117 @@ def _view_domain(kg: dict) -> dict:
 
 
 VIEW_BUILDERS = {
-    "tech": ("技术共现", "两个技术被 ≥3 个仓库同时使用就连一条边", _view_tech_cooccurrence),
-    "team": ("团队 ↔ 技术", "谁在用什么", _view_team_tech),
-    "domain": ("领域 ↔ 技术", "哪块业务用哪些栈（≥2 个仓库才连边）", _view_domain),
-    "full": ("全图", "所有节点和边。能看结构密度，看不清细节", _view_full),
+    "tech": _view_tech_cooccurrence,
+    "team": _view_team_tech,
+    "domain": _view_domain,
+    "full": _view_full,
 }
+
+
+# ---------------------------------------------------------------------------
+# Localisation
+#
+# Keys with `{placeholders}` are filled in by the template's `t()` helper. The
+# two dicts must keep identical key sets — `test_viewer_locales_have_the_same
+# _keys` pins that, because a missing key renders as `undefined` in the page.
+
+DEFAULT_LANG = "zh"
+
+VIEW_META = {
+    "zh": {
+        "tech": ("技术共现", "两个技术被 ≥3 个仓库同时使用就连一条边"),
+        "team": ("团队 ↔ 技术", "谁在用什么"),
+        "domain": ("领域 ↔ 技术", "哪块业务用哪些栈（≥2 个仓库才连边）"),
+        "full": ("全图", "所有节点和边。能看结构密度，看不清细节"),
+    },
+    "en": {
+        "tech": ("Tech co-occurrence", "Two technologies are linked when ≥3 repos use both"),
+        "team": ("Team ↔ tech", "Who uses what"),
+        "domain": ("Domain ↔ tech",
+                   "Which parts of the business use which stack (≥2 repos to draw an edge)"),
+        "full": ("Everything", "Every node and edge. Shows structural density, not detail"),
+    },
+}
+
+UI_STRINGS = {
+    "zh": {
+        "viewsLabel": "视图",
+        "relayout": "重新布局",
+        "fit": "适应窗口",
+        "canvasHint": "拖拽平移 · 滚轮缩放 · 点节点看详情 · 拖节点可固定",
+        "searchLabel": "搜索",
+        "searchPlaceholder": "输入名字的一部分…",
+        "searchTooShort": "至少 2 个字符",
+        "searchHits": "命中 {n} 个",
+        "nodeTypesLabel": "节点类型",
+        "detailEmpty": "点一个节点看详情。",
+        "statusCounts": "{n} 节点 · {e} 边",
+        "statusRunning": "布局中 {t} 帧（α={a}）",
+        "statusSettled": "已稳定（{t} 帧）",
+        "statusZoom": "缩放 {k}×",
+        "tipEdges": "{d} 条边",
+        "neighbours": "邻居 {n}",
+        "neighboursMore": "… 另 {n} 个",
+        "viewOption": "{name}（{n} 节点 / {e} 边）",
+    },
+    "en": {
+        "viewsLabel": "View",
+        "relayout": "Re-layout",
+        "fit": "Fit to window",
+        "canvasHint":
+            "Drag to pan · scroll to zoom · click a node for details · drag a node to pin it",
+        "searchLabel": "Search",
+        "searchPlaceholder": "Type part of a name…",
+        "searchTooShort": "at least 2 characters",
+        "searchHits": "{n} matching",
+        "nodeTypesLabel": "Node types",
+        "detailEmpty": "Click a node to see its details.",
+        "statusCounts": "{n} nodes · {e} edges",
+        "statusRunning": "laying out, {t} frames (α={a})",
+        "statusSettled": "settled ({t} frames)",
+        "statusZoom": "zoom {k}×",
+        "tipEdges": "{d} edges",
+        "neighbours": "Neighbours {n}",
+        "neighboursMore": "… {n} more",
+        "viewOption": "{name} ({n} nodes / {e} edges)",
+    },
+}
+
+LANGUAGES = tuple(UI_STRINGS)
+
+
+def resolve_lang(lang: str | None) -> str:
+    """Unknown or missing language falls back to the default rather than
+    raising — an export is worth producing even in the wrong locale."""
+    return lang if lang in UI_STRINGS else DEFAULT_LANG
 
 
 # ---------------------------------------------------------------------------
 
 
-def build_html(kg: dict, title: str = "capability map", default_view: str = "tech") -> str:
+def build_html(
+    kg: dict,
+    title: str = "capability map",
+    default_view: str = "tech",
+    lang: str = DEFAULT_LANG,
+) -> str:
     if not TEMPLATE.exists():
         raise FileNotFoundError(f"viewer template missing: {TEMPLATE}")
 
+    lang = resolve_lang(lang)
+    meta = VIEW_META[lang]
+
     views = {}
-    for key, (name, desc, fn) in VIEW_BUILDERS.items():
+    for key, fn in VIEW_BUILDERS.items():
         packed = fn(kg)
-        packed["name"] = name
-        packed["desc"] = desc
+        packed["name"], packed["desc"] = meta[key]
         views[key] = packed
 
     payload = {
         "title": title,
         "defaultView": default_view if default_view in views else "tech",
         "colors": TYPE_COLORS,
+        "i18n": UI_STRINGS[lang],
         "views": views,
     }
     data = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
@@ -202,15 +293,21 @@ def build_html(kg: dict, title: str = "capability map", default_view: str = "tec
     data = data.replace("</", "<\\/")
 
     html = TEMPLATE.read_text()
-    return html.replace("__CAPMAP_TITLE__", title).replace('"__CAPMAP_DATA__"', data)
+    return (
+        html.replace("__CAPMAP_LANG__", lang)
+        .replace("__CAPMAP_TITLE__", title)
+        .replace('"__CAPMAP_DATA__"', data)
+    )
 
 
-def view_summary(kg: dict) -> list[dict]:
+def view_summary(kg: dict, lang: str = DEFAULT_LANG) -> list[dict]:
     """What each view will contain — printed by the CLI so nobody opens a
     500-node picture expecting to read the labels."""
+    meta = VIEW_META[resolve_lang(lang)]
     rows = []
-    for key, (name, desc, fn) in VIEW_BUILDERS.items():
+    for key, fn in VIEW_BUILDERS.items():
         packed = fn(kg)
+        name, desc = meta[key]
         rows.append(
             {
                 "key": key,
@@ -244,6 +341,7 @@ def run_export(
     around: str | None = None,
     hops: int = 1,
     keep_sources: bool = False,
+    lang: str = DEFAULT_LANG,
 ) -> dict:
     """Filter and render the KG to a file. Shared by `cli.py`'s `export`
     command and the agent's `export` tool, so the neighbourhood/type
@@ -307,7 +405,7 @@ def run_export(
     out = Path(output) if output else (proj.root / f"kg/capability-map.{_EXPORT_EXTENSIONS[fmt]}")
 
     if fmt == "html":
-        text = build_html(kg, title=proj.name, default_view=default_view)
+        text = build_html(kg, title=proj.name, default_view=default_view, lang=lang)
     else:
         try:
             text = WRITERS[fmt](kg) if fmt == "dot" else WRITERS[fmt](kg, keep_sources)
