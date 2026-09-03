@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -784,6 +785,68 @@ def test_viewer_views_are_derived_not_empty():
     rows = {r["key"]: r for r in view_summary(_tiny_graph())}
     assert rows["full"]["nodes"] == len(_tiny_graph()["nodes"])
     assert rows["team"]["nodes"] > 0
+
+
+# ---------------------------------------------------------------------------
+# Viewer localisation
+
+
+def _viewer_payload(**kw) -> dict:
+    """The DATA blob the page actually runs on, parsed back out of the HTML."""
+    import re
+
+    from epistemic_agent.export.viewer import build_html
+
+    html = build_html(_export_graph(), title="t", **kw)
+    raw = re.search(r"^const DATA = (.*);$", html, re.M).group(1)
+    return {"html": html, "data": json.loads(raw.replace("<\\/", "</"))}
+
+
+def test_viewer_locales_have_the_same_keys():
+    """A key present in one locale and missing in the other renders as
+    `undefined` in the page — cheap to pin, invisible otherwise."""
+    from epistemic_agent.export.viewer import UI_STRINGS, VIEW_BUILDERS, VIEW_META
+
+    assert set(UI_STRINGS["zh"]) == set(UI_STRINGS["en"])
+    for lang, meta in VIEW_META.items():
+        assert set(meta) == set(VIEW_BUILDERS), lang
+
+
+def test_viewer_english_page_carries_no_chinese_ui_text():
+    """The template must not hold locale literals of its own. JS comments are
+    exempt — they are code, not interface."""
+    out = _viewer_payload(lang="en")
+    assert '<html lang="en">' in out["html"]
+    assert out["data"]["i18n"]["detailEmpty"] == "Click a node to see its details."
+    assert out["data"]["views"]["team"]["name"] == "Team ↔ tech"
+
+    body = out["html"].split("<script>")[0]
+    assert not re.search(r"[一-鿿]", body), "Chinese left in the English markup"
+    assert not re.search(r"[一-鿿]", json.dumps(out["data"]["i18n"], ensure_ascii=False))
+
+
+def test_viewer_defaults_to_chinese_and_falls_back_for_unknown_langs():
+    zh = _viewer_payload()
+    assert '<html lang="zh">' in zh["html"]
+    assert zh["data"]["i18n"]["detailEmpty"] == "点一个节点看详情。"
+    assert _viewer_payload(lang="klingon")["data"]["i18n"] == zh["data"]["i18n"]
+
+
+def test_view_summary_is_localised():
+    from epistemic_agent.export.viewer import view_summary
+
+    en = {r["key"]: r for r in view_summary(_tiny_graph(), lang="en")}
+    zh = {r["key"]: r for r in view_summary(_tiny_graph())}
+    assert en["full"]["name"] == "Everything"
+    # Only the labels change; the graphs behind them are the same.
+    assert [r["nodes"] for r in en.values()] == [r["nodes"] for r in zh.values()]
+
+
+def test_run_export_passes_lang_through_to_the_page(tmp_path):
+    from epistemic_agent.export.viewer import run_export
+
+    result = run_export(_export_project(tmp_path), fmt="html", lang="en")
+    assert '<html lang="en">' in result["output_path"].read_text()
 
 
 def _export_project(tmp_path: Path) -> Project:

@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>acme-corp</title>
+<style>
+  :root{
+    --bg:#12151a; --panel:#1a1f27; --line:#2a313c;
+    --fg:#e6e9ef; --dim:#8b95a5; --accent:#4C8BF5;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;
+    font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",
+      "PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--fg)}
+  #app{display:flex;height:100%}
+  #stage{flex:1;position:relative;min-width:0}
+  canvas{display:block;width:100%;height:100%;cursor:grab}
+  canvas.dragging{cursor:grabbing}
+
+  #side{width:320px;flex:none;background:var(--panel);
+    border-left:1px solid var(--line);display:flex;flex-direction:column}
+  #side h1{font-size:14px;margin:0;padding:14px 16px 10px;
+    border-bottom:1px solid var(--line);font-weight:600}
+  .sec{padding:12px 16px;border-bottom:1px solid var(--line)}
+  .sec h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--dim);margin:0 0 8px;font-weight:600}
+
+  select,input,button{font:inherit;color:var(--fg);background:#222834;
+    border:1px solid var(--line);border-radius:5px;padding:6px 8px;width:100%}
+  button{cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  .row{display:flex;gap:6px;margin-top:6px}
+  .hint{color:var(--dim);font-size:11px;margin-top:6px;line-height:1.45}
+
+  .legend label{display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer}
+  .legend input{width:auto;margin:0}
+  .sw{width:11px;height:11px;border-radius:3px;flex:none}
+  .cnt{margin-left:auto;color:var(--dim);font-variant-numeric:tabular-nums}
+
+  #detail{flex:1;overflow-y:auto;padding:12px 16px}
+  #detail .empty{color:var(--dim);font-size:12px;padding-top:8px}
+  #detail .ttl{font-size:15px;font-weight:600;margin-bottom:2px;word-break:break-word}
+  #detail .sub{color:var(--dim);font-size:11px;margin-bottom:10px;word-break:break-all}
+  #detail dl{margin:0;display:grid;grid-template-columns:82px 1fr;gap:4px 10px}
+  #detail dt{color:var(--dim);font-size:11px}
+  #detail dd{margin:0;font-size:12px;word-break:break-word}
+  #detail .nb{margin-top:12px}
+  #detail .nb div{padding:3px 0;border-top:1px solid var(--line);cursor:pointer;font-size:12px}
+  #detail .nb div:hover{color:var(--accent)}
+
+  #tip{position:absolute;pointer-events:none;background:#0d1015ee;
+    border:1px solid var(--line);border-radius:5px;padding:5px 9px;
+    font-size:12px;display:none;max-width:300px;z-index:5}
+  #status{position:absolute;left:12px;bottom:10px;color:var(--dim);
+    font-size:11px;font-variant-numeric:tabular-nums}
+  #viewdesc{position:absolute;left:12px;top:10px;color:var(--dim);font-size:11px;
+    max-width:60%}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="viewdesc"></div>
+    <div id="tip"></div>
+    <div id="status"></div>
+  </div>
+
+  <div id="side">
+    <h1>acme-corp</h1>
+
+    <!-- Every user-facing string is filled in from DATA.i18n at startup;
+         the markup carries no locale of its own. -->
+    <div class="sec">
+      <h2 id="t-views"></h2>
+      <select id="view"></select>
+      <div class="row">
+        <button id="relayout"></button>
+        <button id="fit"></button>
+      </div>
+      <div class="hint" id="t-hint"></div>
+    </div>
+
+    <div class="sec">
+      <h2 id="t-search"></h2>
+      <input id="q" autocomplete="off">
+      <div class="hint" id="qhint"></div>
+    </div>
+
+    <div class="sec">
+      <h2 id="t-types"></h2>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div id="detail"></div>
+  </div>
+</div>
+
+<script>
+const DATA = {"title":"acme-corp","defaultView":"tech","colors":{"Repo":"#4C8BF5","Team":"#34A853","TechStack":"#FBBC05","Capability":"#EA4335","Pattern":"#A142F4","Domain":"#00ACC1","InternalSystem":"#F4511E","Person":"#8D6E63","Untyped":"#9E9E9E"},"i18n":{"viewsLabel":"View","relayout":"Re-layout","fit":"Fit to window","canvasHint":"Drag to pan · scroll to zoom · click a node for details · drag a node to pin it","searchLabel":"Search","searchPlaceholder":"Type part of a name…","searchTooShort":"at least 2 characters","searchHits":"{n} matching","nodeTypesLabel":"Node types","detailEmpty":"Click a node to see its details.","statusCounts":"{n} nodes · {e} edges","statusRunning":"laying out, {t} frames (α={a})","statusSettled":"settled ({t} frames)","statusZoom":"zoom {k}×","tipEdges":"{d} edges","neighbours":"Neighbours {n}","neighboursMore":"… {n} more","viewOption":"{name} ({n} nodes / {e} edges)"},"views":{"tech":{"types":["TechStack"],"edgeTypes":["CO_OCCURS"],"nodes":[{"i":0,"id":"tech-fastapi","l":"FastAPI","t":0,"d":4,"p":{"label":"FastAPI","term_id":"ws:fastapi","ontology_id":"web-service","_grounding_score":1.0,"raw_label":"fastapi"}},{"i":1,"id":"tech-langgraph","l":"LangGraph","t":0,"d":3,"p":{"label":"LangGraph","term_id":"af:langgraph","ontology_id":"agent-framework","_grounding_score":1.0,"raw_label":"langgraph"}},{"i":2,"id":"tech-mongodb","l":"MongoDB","t":0,"d":2,"p":{"label":"MongoDB","term_id":"sr:mongodb","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"mongodb"}},{"i":3,"id":"tech-postgresql","l":"PostgreSQL","t":0,"d":2,"p":{"label":"PostgreSQL","term_id":"sr:postgresql","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"postgresql"}},{"i":4,"id":"tech-redis","l":"Redis","t":0,"d":1,"p":{"label":"Redis","term_id":"sr:redis","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"redis"}}],"edges":[{"s":0,"t":3,"y":0},{"s":0,"t":1,"y":0},{"s":1,"t":3,"y":0},{"s":0,"t":4,"y":0},{"s":0,"t":2,"y":0},{"s":1,"t":2,"y":0}],"name":"Tech co-occurrence","desc":"Two technologies are linked when ≥3 repos use both"},"team":{"types":["Team","TechStack"],"edgeTypes":["TEAM_USES"],"nodes":[{"i":0,"id":"team-api-gateway","l":"api-gateway","t":0,"d":4,"p":{"name":"api-gateway","kind":"group","namespace":"api-gateway"}},{"i":1,"id":"team-billing","l":"billing","t":0,"d":4,"p":{"name":"billing","kind":"group","namespace":"billing"}},{"i":2,"id":"team-data-eng","l":"data-eng","t":0,"d":6,"p":{"name":"data-eng","kind":"group","namespace":"data-eng"}},{"i":3,"id":"team-growth","l":"growth","t":0,"d":8,"p":{"name":"growth","kind":"group","namespace":"growth"}},{"i":4,"id":"team-ml-research","l":"ml-research","t":0,"d":6,"p":{"name":"ml-research","kind":"group","namespace":"ml-research"}},{"i":5,"id":"team-mobile","l":"mobile","t":0,"d":3,"p":{"name":"mobile","kind":"group","namespace":"mobile"}},{"i":6,"id":"team-platform","l":"platform","t":0,"d":7,"p":{"name":"platform","kind":"group","namespace":"platform"}},{"i":7,"id":"team-search","l":"search","t":0,"d":5,"p":{"name":"search","kind":"group","namespace":"search"}},{"i":8,"id":"team-security","l":"security","t":0,"d":6,"p":{"name":"security","kind":"group","namespace":"security"}},{"i":9,"id":"team-sre","l":"sre","t":0,"d":5,"p":{"name":"sre","kind":"group","namespace":"sre"}},{"i":10,"id":"tech-anthropic","l":"Anthropic Claude","t":1,"d":2,"p":{"label":"Anthropic Claude","term_id":"llm:anthropic","ontology_id":"llm-provider","_grounding_score":0.98,"raw_label":"anthropic"}},{"i":11,"id":"tech-apscheduler","l":"任务调度","t":1,"d":1,"p":{"label":"任务调度","term_id":"dd:apscheduler","ontology_id":"document-data","_grounding_score":0.98,"raw_label":"apscheduler"}},{"i":12,"id":"tech-chromadb","l":"ChromaDB","t":1,"d":1,"p":{"label":"ChromaDB","term_id":"sr:chromadb","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"chromadb"}},{"i":13,"id":"tech-dbt","l":"dbt","t":1,"d":1,"p":{"label":"dbt","_grounding_score":0.5,"raw_label":"dbt"}},{"i":14,"id":"tech-docker","l":"Docker","t":1,"d":1,"p":{"label":"Docker","term_id":"id:docker","ontology_id":"infra-deploy","_grounding_score":1.0,"raw_label":"docker"}},{"i":15,"id":"tech-elasticsearch","l":"Elasticsearch","t":1,"d":1,"p":{"label":"Elasticsearch","term_id":"sr:elasticsearch","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"elasticsearch"}},{"i":16,"id":"tech-fastapi","l":"FastAPI","t":1,"d":9,"p":{"label":"FastAPI","term_id":"ws:fastapi","ontology_id":"web-service","_grounding_score":1.0,"raw_label":"fastapi"}},{"i":17,"id":"tech-flask","l":"Flask","t":1,"d":1,"p":{"label":"Flask","term_id":"ws:flask","ontology_id":"web-service","_grounding_score":1.0,"raw_label":"flask"}},{"i":18,"id":"tech-github-actions","l":"GitHub Actions","t":1,"d":1,"p":{"label":"GitHub Actions","term_id":"id:github-actions","ontology_id":"infra-deploy","_grounding_score":0.98,"raw_label":"github-actions"}},{"i":19,"id":"tech-grafana","l":"Grafana 栈","t":1,"d":1,"p":{"label":"Grafana 栈","term_id":"oe:grafana","ontology_id":"observability-eval","_grounding_score":0.98,"raw_label":"grafana"}},{"i":20,"id":"tech-kubernetes","l":"Kubernetes","t":1,"d":1,"p":{"label":"Kubernetes","term_id":"id:kubernetes","ontology_id":"infra-deploy","_grounding_score":1.0,"raw_label":"kubernetes"}},{"i":21,"id":"tech-langfuse","l":"Langfuse","t":1,"d":1,"p":{"label":"Langfuse","term_id":"oe:langfuse","ontology_id":"observability-eval","_grounding_score":1.0,"raw_label":"langfuse"}},{"i":22,"id":"tech-langgraph","l":"LangGraph","t":1,"d":8,"p":{"label":"LangGraph","term_id":"af:langgraph","ontology_id":"agent-framework","_grounding_score":1.0,"raw_label":"langgraph"}},{"i":23,"id":"tech-mlflow","l":"MLflow","t":1,"d":3,"p":{"label":"MLflow","term_id":"oe:mlflow","ontology_id":"observability-eval","_grounding_score":1.0,"raw_label":"mlflow"}},{"i":24,"id":"tech-mongodb","l":"MongoDB","t":1,"d":3,"p":{"label":"MongoDB","term_id":"sr:mongodb","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"mongodb"}},{"i":25,"id":"tech-oauth2","l":"OAuth2 / OIDC","t":1,"d":1,"p":{"label":"OAuth2 / OIDC","term_id":"pi:oauth2","ontology_id":"protocol-integration","_grounding_score":0.98,"raw_label":"oauth2"}},{"i":26,"id":"tech-openai","l":"OpenAI","t":1,"d":1,"p":{"label":"OpenAI","term_id":"llm:openai","ontology_id":"llm-provider","_grounding_score":1.0,"raw_label":"openai"}},{"i":27,"id":"tech-opentelemetry","l":"OpenTelemetry","t":1,"d":1,"p":{"label":"OpenTelemetry","term_id":"oe:opentelemetry","ontology_id":"observability-eval","_grounding_score":1.0,"raw_label":"opentelemetry"}},{"i":28,"id":"tech-portkey","l":"Portkey","t":1,"d":2,"p":{"label":"Portkey","term_id":"llm:portkey","ontology_id":"llm-provider","_grounding_score":1.0,"raw_label":"portkey"}},{"i":29,"id":"tech-postgresql","l":"PostgreSQL","t":1,"d":3,"p":{"label":"PostgreSQL","term_id":"sr:postgresql","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"postgresql"}},{"i":30,"id":"tech-pytest","l":"pytest","t":1,"d":1,"p":{"label":"pytest","term_id":"oe:pytest","ontology_id":"observability-eval","_grounding_score":1.0,"raw_label":"pytest"}},{"i":31,"id":"tech-qdrant","l":"Qdrant","t":1,"d":1,"p":{"label":"Qdrant","term_id":"sr:qdrant","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"qdrant"}},{"i":32,"id":"tech-redis","l":"Redis","t":1,"d":4,"p":{"label":"Redis","term_id":"sr:redis","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"redis"}},{"i":33,"id":"tech-snowflake","l":"Snowflake","t":1,"d":1,"p":{"label":"Snowflake","term_id":"sr:snowflake","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"snowflake"}},{"i":34,"id":"tech-streamlit","l":"Streamlit","t":1,"d":1,"p":{"label":"Streamlit","term_id":"ws:streamlit","ontology_id":"web-service","_grounding_score":1.0,"raw_label":"streamlit"}},{"i":35,"id":"tech-typer","l":"Typer","t":1,"d":2,"p":{"label":"Typer","term_id":"dt:typer","ontology_id":"dev-agent-tooling","_grounding_score":1.0,"raw_label":"typer"}},{"i":36,"id":"tech-uv","l":"uv","t":1,"d":1,"p":{"label":"uv","term_id":"dt:uv","ontology_id":"dev-agent-tooling","_grounding_score":1.0,"raw_label":"uv"}}],"edges":[{"s":0,"t":14,"y":0},{"s":0,"t":16,"y":0},{"s":0,"t":20,"y":0},{"s":0,"t":17,"y":0},{"s":1,"t":11,"y":0},{"s":1,"t":16,"y":0},{"s":1,"t":29,"y":0},{"s":1,"t":22,"y":0},{"s":2,"t":13,"y":0},{"s":2,"t":22,"y":0},{"s":2,"t":29,"y":0},{"s":2,"t":16,"y":0},{"s":2,"t":32,"y":0},{"s":2,"t":33,"y":0},{"s":3,"t":16,"y":0},{"s":3,"t":23,"y":0},{"s":3,"t":29,"y":0},{"s":3,"t":22,"y":0},{"s":3,"t":28,"y":0},{"s":3,"t":31,"y":0},{"s":3,"t":32,"y":0},{"s":3,"t":24,"y":0},{"s":4,"t":21,"y":0},{"s":4,"t":30,"y":0},{"s":4,"t":23,"y":0},{"s":4,"t":10,"y":0},{"s":4,"t":26,"y":0},{"s":4,"t":34,"y":0},{"s":5,"t":16,"y":0},{"s":5,"t":22,"y":0},{"s":5,"t":24,"y":0},{"s":6,"t":16,"y":0},{"s":6,"t":22,"y":0},{"s":6,"t":28,"y":0},{"s":6,"t":32,"y":0},{"s":6,"t":12,"y":0},{"s":6,"t":35,"y":0},{"s":6,"t":36,"y":0},{"s":7,"t":15,"y":0},{"s":7,"t":16,"y":0},{"s":7,"t":32,"y":0},{"s":7,"t":10,"y":0},{"s":7,"t":22,"y":0},{"s":8,"t":16,"y":0},{"s":8,"t":22,"y":0},{"s":8,"t":25,"y":0},{"s":8,"t":24,"y":0},{"s":8,"t":18,"y":0},{"s":8,"t":35,"y":0},{"s":9,"t":19,"y":0},{"s":9,"t":22,"y":0},{"s":9,"t":27,"y":0},{"s":9,"t":16,"y":0},{"s":9,"t":23,"y":0}],"name":"Team ↔ tech","desc":"Who uses what"},"domain":{"types":["Domain","TechStack"],"edgeTypes":["DOMAIN_USES"],"nodes":[{"i":0,"id":"domain-customer-facing-agents","l":"Customer-Facing Agents","t":0,"d":4,"p":{"label":"Customer-Facing Agents"}},{"i":1,"id":"domain-data-platform-architecture","l":"Data Platform / Architecture","t":0,"d":2,"p":{"label":"Data Platform / Architecture"}},{"i":2,"id":"domain-internal-productivity","l":"Internal Productivity","t":0,"d":2,"p":{"label":"Internal Productivity"}},{"i":3,"id":"domain-it-ops-infrastructure","l":"IT Ops / Infrastructure","t":0,"d":1,"p":{"label":"IT Ops / Infrastructure"}},{"i":4,"id":"domain-platform-gateway-framework","l":"Platform / Gateway / Framework","t":0,"d":5,"p":{"label":"Platform / Gateway / Framework"}},{"i":5,"id":"domain-tools-skills-evaluation","l":"Tools / Skills / Evaluation","t":0,"d":3,"p":{"label":"Tools / Skills / Evaluation"}},{"i":6,"id":"tech-dbt","l":"dbt","t":1,"d":1,"p":{"label":"dbt","_grounding_score":0.5,"raw_label":"dbt"}},{"i":7,"id":"tech-docker","l":"Docker","t":1,"d":1,"p":{"label":"Docker","term_id":"id:docker","ontology_id":"infra-deploy","_grounding_score":1.0,"raw_label":"docker"}},{"i":8,"id":"tech-fastapi","l":"FastAPI","t":1,"d":3,"p":{"label":"FastAPI","term_id":"ws:fastapi","ontology_id":"web-service","_grounding_score":1.0,"raw_label":"fastapi"}},{"i":9,"id":"tech-langfuse","l":"Langfuse","t":1,"d":1,"p":{"label":"Langfuse","term_id":"oe:langfuse","ontology_id":"observability-eval","_grounding_score":1.0,"raw_label":"langfuse"}},{"i":10,"id":"tech-langgraph","l":"LangGraph","t":1,"d":4,"p":{"label":"LangGraph","term_id":"af:langgraph","ontology_id":"agent-framework","_grounding_score":1.0,"raw_label":"langgraph"}},{"i":11,"id":"tech-mlflow","l":"MLflow","t":1,"d":1,"p":{"label":"MLflow","term_id":"oe:mlflow","ontology_id":"observability-eval","_grounding_score":1.0,"raw_label":"mlflow"}},{"i":12,"id":"tech-mongodb","l":"MongoDB","t":1,"d":1,"p":{"label":"MongoDB","term_id":"sr:mongodb","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"mongodb"}},{"i":13,"id":"tech-portkey","l":"Portkey","t":1,"d":1,"p":{"label":"Portkey","term_id":"llm:portkey","ontology_id":"llm-provider","_grounding_score":1.0,"raw_label":"portkey"}},{"i":14,"id":"tech-postgresql","l":"PostgreSQL","t":1,"d":2,"p":{"label":"PostgreSQL","term_id":"sr:postgresql","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"postgresql"}},{"i":15,"id":"tech-pytest","l":"pytest","t":1,"d":1,"p":{"label":"pytest","term_id":"oe:pytest","ontology_id":"observability-eval","_grounding_score":1.0,"raw_label":"pytest"}},{"i":16,"id":"tech-redis","l":"Redis","t":1,"d":1,"p":{"label":"Redis","term_id":"sr:redis","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"redis"}}],"edges":[{"s":4,"t":7,"y":0},{"s":4,"t":8,"y":0},{"s":2,"t":8,"y":0},{"s":0,"t":8,"y":0},{"s":0,"t":10,"y":0},{"s":0,"t":14,"y":0},{"s":1,"t":6,"y":0},{"s":1,"t":14,"y":0},{"s":5,"t":11,"y":0},{"s":4,"t":10,"y":0},{"s":4,"t":13,"y":0},{"s":4,"t":16,"y":0},{"s":0,"t":12,"y":0},{"s":5,"t":9,"y":0},{"s":5,"t":15,"y":0},{"s":2,"t":10,"y":0},{"s":3,"t":10,"y":0}],"name":"Domain ↔ tech","desc":"Which parts of the business use which stack (≥2 repos to draw an edge)"},"full":{"types":["Domain","InternalSystem","Repo","Team","TechStack"],"edgeTypes":["DEPENDS_ON_INTERNAL","IN_DOMAIN","OWNED_BY","USES_TECH"],"nodes":[{"i":0,"id":"domain-customer-facing-agents","l":"Customer-Facing Agents","t":0,"d":5,"p":{"label":"Customer-Facing Agents"}},{"i":1,"id":"domain-data-platform-architecture","l":"Data Platform / Architecture","t":0,"d":3,"p":{"label":"Data Platform / Architecture"}},{"i":2,"id":"domain-internal-productivity","l":"Internal Productivity","t":0,"d":4,"p":{"label":"Internal Productivity"}},{"i":3,"id":"domain-it-ops-infrastructure","l":"IT Ops / Infrastructure","t":0,"d":3,"p":{"label":"IT Ops / Infrastructure"}},{"i":4,"id":"domain-platform-gateway-framework","l":"Platform / Gateway / Framework","t":0,"d":5,"p":{"label":"Platform / Gateway / Framework"}},{"i":5,"id":"domain-tools-skills-evaluation","l":"Tools / Skills / Evaluation","t":0,"d":5,"p":{"label":"Tools / Skills / Evaluation"}},{"i":6,"id":"sys-atlas","l":"Atlas","t":1,"d":16,"p":{"label":"Atlas","kind":"platform","term_id":"is:atlas","ontology_id":"internal-system","_grounding_score":1.0,"raw_label":"Atlas"}},{"i":7,"id":"sys-beacon","l":"Beacon","t":1,"d":4,"p":{"label":"Beacon","kind":"platform","term_id":"is:beacon","ontology_id":"internal-system","_grounding_score":1.0,"raw_label":"Beacon"}},{"i":8,"id":"sys-forge","l":"Forge","t":1,"d":5,"p":{"label":"Forge","kind":"platform","term_id":"is:forge","ontology_id":"internal-system","_grounding_score":1.0,"raw_label":"Forge"}},{"i":9,"id":"repo-api-gateway--edge-router","l":"Edge Router","t":2,"d":6,"p":{"name":"Edge Router","path":"api-gateway/edge-router","url":"https://git.acme.example/api-gateway/edge-router","description":"Terminates TLS and routes external traffic to internal services.","value":"The single entry point for all external API traffic.","last_commit":"2026-06-19"}},{"i":10,"id":"repo-api-gateway--legacy-router","l":"Legacy Router","t":2,"d":4,"p":{"name":"Legacy Router","path":"api-gateway/legacy-router","url":"https://git.acme.example/api-gateway/legacy-router","description":"Predecessor to the edge router, kept running for one remaining internal client.","value":"Nothing — candidate for retirement once the last client migrates.","last_commit":"2025-02-11"}},{"i":11,"id":"repo-billing--dunning-service","l":"Dunning Service","t":2,"d":6,"p":{"name":"Dunning Service","path":"billing/dunning-service","url":"https://git.acme.example/billing/dunning-service","description":"Schedules and sends payment-reminder notifications.","value":"Runs the retry schedule for failed payments.","last_commit":"2025-11-08"}},{"i":12,"id":"repo-billing--invoice-agent","l":"Invoice Agent","t":2,"d":6,"p":{"name":"Invoice Agent","path":"billing/invoice-agent","url":"https://git.acme.example/billing/invoice-agent","description":"Answers customer questions about their invoices.","value":"Deflects a large share of billing support tickets.","last_commit":"2026-06-12"}},{"i":13,"id":"repo-data-eng--etl-orchestrator","l":"ETL Orchestrator","t":2,"d":7,"p":{"name":"ETL Orchestrator","path":"data-eng/etl-orchestrator","url":"https://git.acme.example/data-eng/etl-orchestrator","description":"Schedules and monitors the nightly warehouse load jobs.","value":"The one place that knows the full dependency order of the data pipeline.","last_commit":"2026-06-10"}},{"i":14,"id":"repo-data-eng--feature-store","l":"Feature Store","t":2,"d":6,"p":{"name":"Feature Store","path":"data-eng/feature-store","url":"https://git.acme.example/data-eng/feature-store","description":"Serves precomputed features to the ranking and recommendation models.","value":"Low-latency feature lookups backed by Redis with a Postgres system of record.","last_commit":"2026-06-15"}},{"i":15,"id":"repo-data-eng--warehouse-sync","l":"Warehouse Sync","t":2,"d":6,"p":{"name":"Warehouse Sync","path":"data-eng/warehouse-sync","url":"https://git.acme.example/data-eng/warehouse-sync","description":"Keeps the analytics warehouse in sync with production tables.","value":"dbt models plus a Snowflake loader most dashboards depend on.","last_commit":"2026-04-18"}},{"i":16,"id":"repo-growth--experiment-service","l":"Experiment Service","t":2,"d":6,"p":{"name":"Experiment Service","path":"growth/experiment-service","url":"https://git.acme.example/growth/experiment-service","description":"Assigns users to experiment arms and records outcomes.","value":"System of record for every running A/B test.","last_commit":"2026-06-05"}},{"i":17,"id":"repo-growth--model-router","l":"Model Router","t":2,"d":8,"p":{"name":"Model Router","path":"growth/model-router","url":"https://git.acme.example/growth/model-router","description":"Growth team's own request router in front of Portkey, built independently of the platform team's gateway.","value":"Adds per-experiment routing rules on top of the shared model gateway.","last_commit":"2026-05-20"}},{"i":18,"id":"repo-growth--onboarding-agent","l":"Onboarding Agent","t":2,"d":6,"p":{"name":"Onboarding Agent","path":"growth/onboarding-agent","url":"https://git.acme.example/growth/onboarding-agent","description":"Walks new users through initial account setup.","value":"Reduced drop-off during the first-run experience.","last_commit":"2026-06-17"}},{"i":19,"id":"repo-growth--support-agent","l":"Support Agent","t":2,"d":6,"p":{"name":"Support Agent","path":"growth/support-agent","url":"https://git.acme.example/growth/support-agent","description":"Copied from the mobile team's in-app assistant to answer web app questions.","value":"Same assistant as mobile's, retargeted at the web app FAQ.","last_commit":"2026-03-02"}},{"i":20,"id":"repo-ml-research--agent-benchmarks","l":"Agent Benchmarks","t":2,"d":5,"p":{"name":"Agent Benchmarks","path":"ml-research/agent-benchmarks","url":"https://git.acme.example/ml-research/agent-benchmarks","description":"Tracks agent quality metrics release over release.","value":"The dashboard the eval harness's results feed into.","last_commit":"2026-06-23"}},{"i":21,"id":"repo-ml-research--eval-harness","l":"Eval Harness","t":2,"d":6,"p":{"name":"Eval Harness","path":"ml-research/eval-harness","url":"https://git.acme.example/ml-research/eval-harness","description":"Runs regression evals against every agent before a release.","value":"Catches quality regressions before they reach production.","last_commit":"2026-06-22"}},{"i":22,"id":"repo-ml-research--prompt-lab","l":"Prompt Lab","t":2,"d":6,"p":{"name":"Prompt Lab","path":"ml-research/prompt-lab","url":"https://git.acme.example/ml-research/prompt-lab","description":"Internal playground for iterating on prompts across providers.","value":"Side-by-side comparison UI for Anthropic and OpenAI responses.","last_commit":"2026-06-01"}},{"i":23,"id":"repo-mobile--support-agent","l":"Support Agent","t":2,"d":6,"p":{"name":"Support Agent","path":"mobile/support-agent","url":"https://git.acme.example/mobile/support-agent","description":"In-app assistant that answers common mobile app questions.","value":"First point of contact before a ticket reaches a human agent.","last_commit":"2026-06-08"}},{"i":24,"id":"repo-platform--agent-gateway","l":"Agent Gateway","t":2,"d":7,"p":{"name":"Agent Gateway","path":"platform/agent-gateway","url":"https://git.acme.example/platform/agent-gateway","description":"Routes model calls through Portkey with per-team rate limits and request logging.","value":"Central place every other team's agent traffic passes through before it reaches a model provider.","last_commit":"2026-06-02"}},{"i":25,"id":"repo-platform--docs-bot","l":"Docs Bot","t":2,"d":6,"p":{"name":"Docs Bot","path":"platform/docs-bot","url":"https://git.acme.example/platform/docs-bot","description":"Answers engineering questions by searching internal documentation.","value":"Cuts down on repeated questions in the platform support channel.","last_commit":"2026-06-11"}},{"i":26,"id":"repo-platform--internal-cli","l":"Internal CLI","t":2,"d":4,"p":{"name":"Internal CLI","path":"platform/internal-cli","url":"https://git.acme.example/platform/internal-cli","description":"Command-line tool that wraps common platform operations.","value":"Reduces a dozen manual steps to one command for common tasks.","last_commit":"2026-06-14"}},{"i":27,"id":"repo-search--query-planner","l":"Query Planner","t":2,"d":6,"p":{"name":"Query Planner","path":"search/query-planner","url":"https://git.acme.example/search/query-planner","description":"Rewrites and dispatches search queries across shards.","value":"The routing layer every search request goes through before hitting Elasticsearch.","last_commit":"2026-05-30"}},{"i":28,"id":"repo-search--relevance-agent","l":"Relevance Agent","t":2,"d":6,"p":{"name":"Relevance Agent","path":"search/relevance-agent","url":"https://git.acme.example/search/relevance-agent","description":"Uses an LLM to re-rank search results for ambiguous queries.","value":"Handles the long tail of queries the classic ranking model scores poorly.","last_commit":"2026-06-20"}},{"i":29,"id":"repo-security--access-review-bot","l":"Access Review Bot","t":2,"d":6,"p":{"name":"Access Review Bot","path":"security/access-review-bot","url":"https://git.acme.example/security/access-review-bot","description":"Reminds team leads to review who still has access to sensitive systems.","value":"Turns a manual quarterly audit into an automated nudge.","last_commit":"2026-05-14"}},{"i":30,"id":"repo-security--compliance-agent","l":"Compliance Agent","t":2,"d":6,"p":{"name":"Compliance Agent","path":"security/compliance-agent","url":"https://git.acme.example/security/compliance-agent","description":"Answers employee questions about internal policy.","value":"Deflects routine policy questions from the security team's inbox.","last_commit":"2026-04-30"}},{"i":31,"id":"repo-security--secret-scanner","l":"Secret Scanner","t":2,"d":5,"p":{"name":"Secret Scanner","path":"security/secret-scanner","url":"https://git.acme.example/security/secret-scanner","description":"Scans commits for accidentally committed credentials.","value":"Runs as a required CI check on every repository.","last_commit":"2026-06-18"}},{"i":32,"id":"repo-sre--incident-copilot","l":"Incident Copilot","t":2,"d":7,"p":{"name":"Incident Copilot","path":"sre/incident-copilot","url":"https://git.acme.example/sre/incident-copilot","description":"Summarises alerts and suggests a first response during an incident.","value":"Cuts the time to first meaningful action during an on-call page.","last_commit":"2026-06-25"}},{"i":33,"id":"repo-sre--runbook-agent","l":"Runbook Agent","t":2,"d":6,"p":{"name":"Runbook Agent","path":"sre/runbook-agent","url":"https://git.acme.example/sre/runbook-agent","description":"Walks an on-call engineer through a known runbook step by step.","value":"Encodes tribal knowledge that used to live only in a wiki.","last_commit":"2026-05-27"}},{"i":34,"id":"team-api-gateway","l":"api-gateway","t":3,"d":2,"p":{"name":"api-gateway","kind":"group","namespace":"api-gateway"}},{"i":35,"id":"team-billing","l":"billing","t":3,"d":2,"p":{"name":"billing","kind":"group","namespace":"billing"}},{"i":36,"id":"team-data-eng","l":"data-eng","t":3,"d":3,"p":{"name":"data-eng","kind":"group","namespace":"data-eng"}},{"i":37,"id":"team-growth","l":"growth","t":3,"d":4,"p":{"name":"growth","kind":"group","namespace":"growth"}},{"i":38,"id":"team-ml-research","l":"ml-research","t":3,"d":3,"p":{"name":"ml-research","kind":"group","namespace":"ml-research"}},{"i":39,"id":"team-mobile","l":"mobile","t":3,"d":1,"p":{"name":"mobile","kind":"group","namespace":"mobile"}},{"i":40,"id":"team-platform","l":"platform","t":3,"d":3,"p":{"name":"platform","kind":"group","namespace":"platform"}},{"i":41,"id":"team-search","l":"search","t":3,"d":2,"p":{"name":"search","kind":"group","namespace":"search"}},{"i":42,"id":"team-security","l":"security","t":3,"d":3,"p":{"name":"security","kind":"group","namespace":"security"}},{"i":43,"id":"team-sre","l":"sre","t":3,"d":2,"p":{"name":"sre","kind":"group","namespace":"sre"}},{"i":44,"id":"tech-anthropic","l":"Anthropic Claude","t":4,"d":2,"p":{"label":"Anthropic Claude","term_id":"llm:anthropic","ontology_id":"llm-provider","_grounding_score":0.98,"raw_label":"anthropic"}},{"i":45,"id":"tech-apscheduler","l":"任务调度","t":4,"d":1,"p":{"label":"任务调度","term_id":"dd:apscheduler","ontology_id":"document-data","_grounding_score":0.98,"raw_label":"apscheduler"}},{"i":46,"id":"tech-chromadb","l":"ChromaDB","t":4,"d":1,"p":{"label":"ChromaDB","term_id":"sr:chromadb","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"chromadb"}},{"i":47,"id":"tech-dbt","l":"dbt","t":4,"d":2,"p":{"label":"dbt","_grounding_score":0.5,"raw_label":"dbt"}},{"i":48,"id":"tech-docker","l":"Docker","t":4,"d":2,"p":{"label":"Docker","term_id":"id:docker","ontology_id":"infra-deploy","_grounding_score":1.0,"raw_label":"docker"}},{"i":49,"id":"tech-elasticsearch","l":"Elasticsearch","t":4,"d":2,"p":{"label":"Elasticsearch","term_id":"sr:elasticsearch","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"elasticsearch"}},{"i":50,"id":"tech-fastapi","l":"FastAPI","t":4,"d":15,"p":{"label":"FastAPI","term_id":"ws:fastapi","ontology_id":"web-service","_grounding_score":1.0,"raw_label":"fastapi"}},{"i":51,"id":"tech-flask","l":"Flask","t":4,"d":1,"p":{"label":"Flask","term_id":"ws:flask","ontology_id":"web-service","_grounding_score":1.0,"raw_label":"flask"}},{"i":52,"id":"tech-github-actions","l":"GitHub Actions","t":4,"d":1,"p":{"label":"GitHub Actions","term_id":"id:github-actions","ontology_id":"infra-deploy","_grounding_score":0.98,"raw_label":"github-actions"}},{"i":53,"id":"tech-grafana","l":"Grafana 栈","t":4,"d":1,"p":{"label":"Grafana 栈","term_id":"oe:grafana","ontology_id":"observability-eval","_grounding_score":0.98,"raw_label":"grafana"}},{"i":54,"id":"tech-kubernetes","l":"Kubernetes","t":4,"d":1,"p":{"label":"Kubernetes","term_id":"id:kubernetes","ontology_id":"infra-deploy","_grounding_score":1.0,"raw_label":"kubernetes"}},{"i":55,"id":"tech-langfuse","l":"Langfuse","t":4,"d":2,"p":{"label":"Langfuse","term_id":"oe:langfuse","ontology_id":"observability-eval","_grounding_score":1.0,"raw_label":"langfuse"}},{"i":56,"id":"tech-langgraph","l":"LangGraph","t":4,"d":13,"p":{"label":"LangGraph","term_id":"af:langgraph","ontology_id":"agent-framework","_grounding_score":1.0,"raw_label":"langgraph"}},{"i":57,"id":"tech-mlflow","l":"MLflow","t":4,"d":3,"p":{"label":"MLflow","term_id":"oe:mlflow","ontology_id":"observability-eval","_grounding_score":1.0,"raw_label":"mlflow"}},{"i":58,"id":"tech-mongodb","l":"MongoDB","t":4,"d":3,"p":{"label":"MongoDB","term_id":"sr:mongodb","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"mongodb"}},{"i":59,"id":"tech-oauth2","l":"OAuth2 / OIDC","t":4,"d":1,"p":{"label":"OAuth2 / OIDC","term_id":"pi:oauth2","ontology_id":"protocol-integration","_grounding_score":0.98,"raw_label":"oauth2"}},{"i":60,"id":"tech-openai","l":"OpenAI","t":4,"d":1,"p":{"label":"OpenAI","term_id":"llm:openai","ontology_id":"llm-provider","_grounding_score":1.0,"raw_label":"openai"}},{"i":61,"id":"tech-opentelemetry","l":"OpenTelemetry","t":4,"d":1,"p":{"label":"OpenTelemetry","term_id":"oe:opentelemetry","ontology_id":"observability-eval","_grounding_score":1.0,"raw_label":"opentelemetry"}},{"i":62,"id":"tech-portkey","l":"Portkey","t":4,"d":2,"p":{"label":"Portkey","term_id":"llm:portkey","ontology_id":"llm-provider","_grounding_score":1.0,"raw_label":"portkey"}},{"i":63,"id":"tech-postgresql","l":"PostgreSQL","t":4,"d":7,"p":{"label":"PostgreSQL","term_id":"sr:postgresql","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"postgresql"}},{"i":64,"id":"tech-pytest","l":"pytest","t":4,"d":2,"p":{"label":"pytest","term_id":"oe:pytest","ontology_id":"observability-eval","_grounding_score":1.0,"raw_label":"pytest"}},{"i":65,"id":"tech-qdrant","l":"Qdrant","t":4,"d":1,"p":{"label":"Qdrant","term_id":"sr:qdrant","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"qdrant"}},{"i":66,"id":"tech-redis","l":"Redis","t":4,"d":4,"p":{"label":"Redis","term_id":"sr:redis","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"redis"}},{"i":67,"id":"tech-snowflake","l":"Snowflake","t":4,"d":1,"p":{"label":"Snowflake","term_id":"sr:snowflake","ontology_id":"storage-retrieval","_grounding_score":1.0,"raw_label":"snowflake"}},{"i":68,"id":"tech-streamlit","l":"Streamlit","t":4,"d":1,"p":{"label":"Streamlit","term_id":"ws:streamlit","ontology_id":"web-service","_grounding_score":1.0,"raw_label":"streamlit"}},{"i":69,"id":"tech-typer","l":"Typer","t":4,"d":2,"p":{"label":"Typer","term_id":"dt:typer","ontology_id":"dev-agent-tooling","_grounding_score":1.0,"raw_label":"typer"}},{"i":70,"id":"tech-uv","l":"uv","t":4,"d":1,"p":{"label":"uv","term_id":"dt:uv","ontology_id":"dev-agent-tooling","_grounding_score":1.0,"raw_label":"uv"}}],"edges":[{"s":9,"t":6,"y":0},{"s":11,"t":6,"y":0},{"s":12,"t":6,"y":0},{"s":13,"t":6,"y":0},{"s":13,"t":8,"y":0},{"s":14,"t":6,"y":0},{"s":15,"t":6,"y":0},{"s":16,"t":6,"y":0},{"s":17,"t":6,"y":0},{"s":18,"t":6,"y":0},{"s":19,"t":6,"y":0},{"s":20,"t":8,"y":0},{"s":21,"t":8,"y":0},{"s":22,"t":7,"y":0},{"s":23,"t":6,"y":0},{"s":24,"t":6,"y":0},{"s":25,"t":7,"y":0},{"s":27,"t":6,"y":0},{"s":28,"t":6,"y":0},{"s":29,"t":7,"y":0},{"s":30,"t":7,"y":0},{"s":31,"t":8,"y":0},{"s":32,"t":6,"y":0},{"s":32,"t":8,"y":0},{"s":33,"t":6,"y":0},{"s":9,"t":4,"y":1},{"s":10,"t":4,"y":1},{"s":11,"t":2,"y":1},{"s":12,"t":0,"y":1},{"s":13,"t":1,"y":1},{"s":14,"t":1,"y":1},{"s":15,"t":1,"y":1},{"s":16,"t":5,"y":1},{"s":17,"t":4,"y":1},{"s":18,"t":0,"y":1},{"s":19,"t":0,"y":1},{"s":20,"t":5,"y":1},{"s":21,"t":5,"y":1},{"s":22,"t":5,"y":1},{"s":23,"t":0,"y":1},{"s":24,"t":4,"y":1},{"s":25,"t":2,"y":1},{"s":26,"t":5,"y":1},{"s":27,"t":4,"y":1},{"s":28,"t":0,"y":1},{"s":29,"t":2,"y":1},{"s":30,"t":2,"y":1},{"s":31,"t":3,"y":1},{"s":32,"t":3,"y":1},{"s":33,"t":3,"y":1},{"s":9,"t":34,"y":2},{"s":10,"t":34,"y":2},{"s":11,"t":35,"y":2},{"s":12,"t":35,"y":2},{"s":13,"t":36,"y":2},{"s":14,"t":36,"y":2},{"s":15,"t":36,"y":2},{"s":16,"t":37,"y":2},{"s":17,"t":37,"y":2},{"s":18,"t":37,"y":2},{"s":19,"t":37,"y":2},{"s":20,"t":38,"y":2},{"s":21,"t":38,"y":2},{"s":22,"t":38,"y":2},{"s":23,"t":39,"y":2},{"s":24,"t":40,"y":2},{"s":25,"t":40,"y":2},{"s":26,"t":40,"y":2},{"s":27,"t":41,"y":2},{"s":28,"t":41,"y":2},{"s":29,"t":42,"y":2},{"s":30,"t":42,"y":2},{"s":31,"t":42,"y":2},{"s":32,"t":43,"y":2},{"s":33,"t":43,"y":2},{"s":9,"t":48,"y":3},{"s":9,"t":50,"y":3},{"s":9,"t":54,"y":3},{"s":10,"t":48,"y":3},{"s":10,"t":51,"y":3},{"s":11,"t":45,"y":3},{"s":11,"t":50,"y":3},{"s":11,"t":63,"y":3},{"s":12,"t":50,"y":3},{"s":12,"t":56,"y":3},{"s":12,"t":63,"y":3},{"s":13,"t":47,"y":3},{"s":13,"t":56,"y":3},{"s":13,"t":63,"y":3},{"s":14,"t":50,"y":3},{"s":14,"t":63,"y":3},{"s":14,"t":66,"y":3},{"s":15,"t":47,"y":3},{"s":15,"t":63,"y":3},{"s":15,"t":67,"y":3},{"s":16,"t":50,"y":3},{"s":16,"t":57,"y":3},{"s":16,"t":63,"y":3},{"s":17,"t":50,"y":3},{"s":17,"t":56,"y":3},{"s":17,"t":62,"y":3},{"s":17,"t":65,"y":3},{"s":17,"t":66,"y":3},{"s":18,"t":50,"y":3},{"s":18,"t":56,"y":3},{"s":18,"t":63,"y":3},{"s":19,"t":50,"y":3},{"s":19,"t":56,"y":3},{"s":19,"t":58,"y":3},{"s":20,"t":55,"y":3},{"s":20,"t":64,"y":3},{"s":21,"t":55,"y":3},{"s":21,"t":57,"y":3},{"s":21,"t":64,"y":3},{"s":22,"t":44,"y":3},{"s":22,"t":60,"y":3},{"s":22,"t":68,"y":3},{"s":23,"t":50,"y":3},{"s":23,"t":56,"y":3},{"s":23,"t":58,"y":3},{"s":24,"t":50,"y":3},{"s":24,"t":56,"y":3},{"s":24,"t":62,"y":3},{"s":24,"t":66,"y":3},{"s":25,"t":46,"y":3},{"s":25,"t":50,"y":3},{"s":25,"t":56,"y":3},{"s":26,"t":69,"y":3},{"s":26,"t":70,"y":3},{"s":27,"t":49,"y":3},{"s":27,"t":50,"y":3},{"s":27,"t":66,"y":3},{"s":28,"t":44,"y":3},{"s":28,"t":49,"y":3},{"s":28,"t":56,"y":3},{"s":29,"t":50,"y":3},{"s":29,"t":56,"y":3},{"s":29,"t":59,"y":3},{"s":30,"t":50,"y":3},{"s":30,"t":56,"y":3},{"s":30,"t":58,"y":3},{"s":31,"t":52,"y":3},{"s":31,"t":69,"y":3},{"s":32,"t":53,"y":3},{"s":32,"t":56,"y":3},{"s":32,"t":61,"y":3},{"s":33,"t":50,"y":3},{"s":33,"t":56,"y":3},{"s":33,"t":57,"y":3}],"name":"Everything","desc":"Every node and edge. Shows structural density, not detail"}}};
+
+/* ---------- 文案 ----------
+   界面语言由 viewer.py 的 UI_STRINGS 决定（capmap export --lang）。
+   模板里不留任何语言字面量，否则加一门语言就得改两处。 */
+const T = DATA.i18n;
+function t(key, vars){
+  return String(T[key]).replace(/\{(\w+)\}/g, (_, k) => vars[k]);
+}
+
+/* ---------- 状态 ---------- */
+let view, nodes, edges, colors = DATA.colors;
+let hidden = new Set();          // 被过滤掉的类型
+let cam = {x:0, y:0, k:1};
+let selected = null, hover = null, highlight = new Set();
+let ticks = 0, running = false, dragNode = null;
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const tip = document.getElementById('tip');
+
+/* ---------- 力导向布局 ----------
+   两个关键点，缺一个就会一直抖：
+
+   1) 退火（alpha 衰减）。所有力都乘 alpha，alpha 从 1 指数衰减到 0。
+      没有它，力每帧以满强度重新施加，节点永远在平衡点附近震荡不收敛。
+      这是 d3-force 的做法，参数也照抄它的默认值。
+   2) 斥力封顶。两个节点重叠时 d² 趋近 0，REPULSION/d² 会爆到几万，
+      只靠限速压不住——节点会持续以最大速度弹开再被拉回。
+
+   排斥力用网格近似：只和相邻 9 格里的节点算，把 O(n²) 压到 O(n·k)。
+   900 个节点跑 O(n²) 每帧 81 万次会卡；网格近似后几千次。 */
+// REPULSION 用的公式和 d3-force 的 manyBody 一样（vx += dx * k/d²），
+// 所以量级也该和它的默认强度 30 同一个数量级，不是几百。
+const REPULSION = 140, SPRING = 0.09, CENTER = 0.0015;
+const LINK_DIST = 45;            // 弹簧的静止长度
+const VELOCITY_DECAY = 0.6;      // 每帧保留的速度比例（d3 的 1 - velocityDecay）
+const ALPHA_DECAY = 0.0228;      // d3 默认：300 帧后 alpha 降到 0.001
+const ALPHA_MIN = 0.005;         // 低于此值认为收敛，停止模拟
+const MIN_DIST2 = 100;           // 距离平方下限（10px）：把单对最大贡献压到 14px
+const MAX_SPEED = 30;            // 仅防止第一帧被甩出视野，收敛后不会触发
+
+let alpha = 1;
+
+/** 节点半径。碰撞力和渲染都要用，所以定义在布局之前。 */
+function radius(nd){ return 3 + Math.min(11, Math.sqrt(nd.d||1)*1.7); }
+
+function layoutStep(){
+  const n = nodes.length;
+  if(!n || alpha < ALPHA_MIN){
+    if(running){ running = false; fit(); }   // 收敛后重新取景（外圈在加载时就摆好了）
+    return;
+  }
+  alpha += (0 - alpha) * ALPHA_DECAY;
+
+  const cell = 60, grid = new Map();
+  for(const nd of nodes){
+    const k = ((nd.x/cell)|0) + ',' + ((nd.y/cell)|0);
+    let b = grid.get(k);
+    if(!b) grid.set(k, b = []);
+    b.push(nd);
+  }
+
+  for(const a of nodes){
+    if(a.fixed) continue;
+    const gx = (a.x/cell)|0, gy = (a.y/cell)|0;
+    for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++){
+      const bucket = grid.get((gx+dx)+','+(gy+dy));
+      if(!bucket) continue;
+      for(const b of bucket){
+        if(a === b) continue;
+        let ddx = a.x-b.x, ddy = a.y-b.y;
+        let d2 = ddx*ddx + ddy*ddy;
+        if(d2 < MIN_DIST2){
+          // 完全重合时给一个确定性的偏移。量级必须和 MIN_DIST2 相当：
+          // 早先这里写的是 ddx = a.i - b.i（索引差，可能上百），
+          // 于是"分开重叠节点"变成了把它们对着甩出去。
+          if(d2 === 0){
+            const sgn = ((a.i - b.i) & 1) ? 1 : -1;
+            ddx = sgn * 7; ddy = 7;
+          }
+          d2 = MIN_DIST2;
+        }
+        const f = REPULSION / d2;
+        a.vx += ddx*f*alpha; a.vy += ddy*f*alpha;
+
+        // 碰撞：按渲染半径直接把重叠的推开。
+        // 这件事调斥力参数是治不好的——斥力管的是全局疏密，
+        // 而「两个圆不许叠在一起」是个几何约束，直接改位置最省事。
+        // 不乘 alpha：退火到后期斥力几乎没了，但圆该不叠还是不能叠。
+        const rr = radius(a) + radius(b) + 2;
+        if(d2 < rr*rr){
+          const dist = Math.sqrt(d2) || 1;
+          const push = (rr - dist) / dist * 0.5;
+          a.x += ddx*push; a.y += ddy*push;
+          if(!b.fixed){ b.x -= ddx*push; b.y -= ddy*push; }
+        }
+      }
+    }
+  }
+
+  // 弹簧必须有静止长度。静止长度为 0 的弹簧会主动把相连节点拉到重合——
+  // 一个 47 度的枢纽节点会把 47 个邻居全吸到自己身上，斥力压不住。
+  // d3-force 的 link 力默认目标距离是 30，同理。
+  for(const e of edges){
+    const a = nodes[e.s], b = nodes[e.t];
+    if(!a || !b) continue;
+    const rx = b.x-a.x, ry = b.y-a.y;
+    const d = Math.hypot(rx, ry) || 1;
+    const f = (d - LINK_DIST) / d * SPRING * alpha;
+    const dx = rx*f, dy = ry*f;
+    if(!a.fixed){ a.vx += dx; a.vy += dy; }
+    if(!b.fixed){ b.vx -= dx; b.vy -= dy; }
+  }
+
+  for(const a of nodes){
+    if(a.fixed){ a.vx = a.vy = 0; continue; }
+    a.vx -= a.x*CENTER*alpha; a.vy -= a.y*CENTER*alpha;
+    a.vx *= VELOCITY_DECAY; a.vy *= VELOCITY_DECAY;
+    const sp = Math.hypot(a.vx, a.vy);
+    if(sp > MAX_SPEED){ a.vx = a.vx/sp*MAX_SPEED; a.vy = a.vy/sp*MAX_SPEED; }
+    a.x += a.vx; a.y += a.vy;
+  }
+  ticks++;
+}
+
+/** 重新加热。拖动节点时轻微加热即可，整体重排才回到 1。 */
+function reheat(to){ alpha = Math.max(alpha, to); running = true; }
+
+/** 把孤立节点（度数 0）摆成主图外面的一圈，并排除出模拟。
+
+    它们没有边，力学上只剩斥力和向心力；而斥力有 180px 的网格截断，
+    一旦彼此拉开就再也感觉不到对方，于是向心力把它们**全部拉到原点同一个点**。
+    全图视图里 102 个 Untyped 节点就是这么叠成一坨的。
+    与其调参，不如承认它们没有拓扑位置可言，确定性地摆一圈——
+    主流图工具也是这么处理孤立点的，而且看起来是有意为之。 */
+function placeIsolated(){
+  const iso = nodes.filter(n => !n.d);
+  if(!iso.length) return;
+  const conn = nodes.filter(n => n.d).length;
+  // 半径由**节点数**推算，不看当前坐标。早先是按主图当前包围盒算、
+  // 并在收敛那一刻重摆一次，结果就是布局停下来的瞬间上百个节点集体瞬移，
+  // 看起来就像图突然炸了一下。经验值：主图收敛半径 ≈ 26~31 × √n。
+  let R = 32 * Math.sqrt(conn) + 80;
+  // 也要够大，免得圈上的节点自己挤在一起
+  R = Math.max(R, iso.length * 9 / (2 * Math.PI));
+  iso.forEach((n, i) => {
+    const a = (i / iso.length) * Math.PI * 2;
+    n.x = Math.cos(a) * R; n.y = Math.sin(a) * R;
+    n.vx = n.vy = 0; n.fixed = true;
+  });
+}
+
+/* ---------- 渲染 ---------- */
+function visible(nd){ return !hidden.has(nd.t); }
+
+function draw(){
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if(cv.width !== w*dpr || cv.height !== h*dpr){
+    cv.width = w*dpr; cv.height = h*dpr;
+  }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  ctx.save();
+  ctx.translate(w/2 + cam.x, h/2 + cam.y);
+  ctx.scale(cam.k, cam.k);
+
+  // 边
+  ctx.lineWidth = 0.6/cam.k;
+  ctx.strokeStyle = 'rgba(140,155,175,.22)';
+  ctx.beginPath();
+  for(const e of edges){
+    const a = nodes[e.s], b = nodes[e.t];
+    if(!a || !b || !visible(a) || !visible(b)) continue;
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+  }
+  ctx.stroke();
+
+  // 选中节点的边高亮
+  if(selected){
+    ctx.lineWidth = 1.6/cam.k;
+    ctx.strokeStyle = 'rgba(76,139,245,.85)';
+    ctx.beginPath();
+    for(const e of edges){
+      if(e.s !== selected.i && e.t !== selected.i) continue;
+      const a = nodes[e.s], b = nodes[e.t];
+      if(!a || !b || !visible(a) || !visible(b)) continue;
+      ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    }
+    ctx.stroke();
+  }
+
+  // 节点
+  for(const nd of nodes){
+    if(!visible(nd)) continue;
+    const r = radius(nd);
+    ctx.beginPath();
+    ctx.arc(nd.x, nd.y, r, 0, 6.284);
+    ctx.fillStyle = colors[view.types[nd.t]] || '#9E9E9E';
+    ctx.globalAlpha = (highlight.size && !highlight.has(nd.i)) ? 0.15 : 1;
+    ctx.fill();
+    if(nd === selected || nd === hover){
+      ctx.lineWidth = 2/cam.k; ctx.strokeStyle = '#fff'; ctx.stroke();
+    } else if(highlight.has(nd.i)){
+      ctx.lineWidth = 1.5/cam.k; ctx.strokeStyle = '#fff'; ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // 标签：只在放大到一定程度、或节点足够重要时画，否则会糊成一片
+  const showAll = cam.k > 1.4;
+  ctx.fillStyle = '#dfe4ec';
+  ctx.font = `${11/cam.k}px sans-serif`;
+  ctx.textAlign = 'center';
+  for(const nd of nodes){
+    if(!visible(nd)) continue;
+    const important = nd === selected || nd === hover || highlight.has(nd.i);
+    if(!important && !(showAll || nd.d >= 12)) continue;
+    if(highlight.size && !highlight.has(nd.i) && !important) continue;
+    ctx.fillText(nd.l, nd.x, nd.y - radius(nd) - 3/cam.k);
+  }
+  ctx.restore();
+
+  document.getElementById('status').textContent = [
+    t('statusCounts', {n: nodes.filter(visible).length, e: edges.length}),
+    running ? t('statusRunning', {t: ticks, a: alpha.toFixed(3)})
+            : t('statusSettled', {t: ticks}),
+    t('statusZoom', {k: cam.k.toFixed(2)}),
+  ].join(' · ');
+}
+
+function loop(){
+  if(running){
+    for(let i=0;i<2;i++) layoutStep();
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 视图切换 ---------- */
+function loadView(key){
+  view = DATA.views[key];
+  const R = Math.max(160, Math.sqrt(view.nodes.length) * 42);
+  nodes = view.nodes.map(n => {
+    const a = Math.random()*6.283, r = Math.sqrt(Math.random())*R;
+    return {...n, x: Math.cos(a)*r, y: Math.sin(a)*r, vx:0, vy:0, fixed:false};
+  });
+  edges = view.edges;
+  hidden = new Set(); selected = null; highlight = new Set(); ticks = 0;
+  alpha = 1; running = true;
+  placeIsolated();
+  document.getElementById('viewdesc').textContent = view.desc;
+  clearDetail();
+  buildLegend();
+  fit();
+}
+
+function buildLegend(){
+  const counts = {};
+  for(const n of nodes) counts[n.t] = (counts[n.t]||0)+1;
+  const box = document.getElementById('legend');
+  box.innerHTML = '';
+  view.types.forEach((t,i) => {
+    if(!counts[i]) return;
+    const lab = document.createElement('label');
+    lab.innerHTML =
+      `<input type="checkbox" checked data-t="${i}">
+       <span class="sw" style="background:${colors[t]||'#9E9E9E'}"></span>
+       <span>${t}</span><span class="cnt">${counts[i]}</span>`;
+    lab.querySelector('input').onchange = ev => {
+      const k = +ev.target.dataset.t;
+      ev.target.checked ? hidden.delete(k) : hidden.add(k);
+    };
+    box.appendChild(lab);
+  });
+}
+
+function fit(){
+  const vis = nodes.filter(visible);
+  if(!vis.length) return;
+  const xs = vis.map(n=>n.x), ys = vis.map(n=>n.y);
+  const minX=Math.min(...xs), maxX=Math.max(...xs);
+  const minY=Math.min(...ys), maxY=Math.max(...ys);
+  const w = cv.clientWidth, h = cv.clientHeight;
+  cam.k = Math.min(w/(maxX-minX+120), h/(maxY-minY+120), 3);
+  cam.x = -((minX+maxX)/2)*cam.k;
+  cam.y = -((minY+maxY)/2)*cam.k;
+}
+
+/* ---------- 交互 ---------- */
+function toWorld(px, py){
+  const r = cv.getBoundingClientRect();
+  return {
+    x: (px - r.left - cv.clientWidth/2 - cam.x)/cam.k,
+    y: (py - r.top - cv.clientHeight/2 - cam.y)/cam.k
+  };
+}
+function pick(px, py){
+  const p = toWorld(px, py);
+  let best = null, bd = 1e9;
+  for(const nd of nodes){
+    if(!visible(nd)) continue;
+    const d = Math.hypot(nd.x-p.x, nd.y-p.y);
+    if(d < radius(nd)+4/cam.k && d < bd){ best = nd; bd = d; }
+  }
+  return best;
+}
+
+let panning = false, last = null, moved = false;
+cv.addEventListener('mousedown', ev => {
+  const hit = pick(ev.clientX, ev.clientY);
+  moved = false;
+  if(hit){ dragNode = hit; hit.fixed = true; }
+  else { panning = true; cv.classList.add('dragging'); }
+  last = {x:ev.clientX, y:ev.clientY};
+});
+window.addEventListener('mousemove', ev => {
+  if(dragNode){
+    const p = toWorld(ev.clientX, ev.clientY);
+    dragNode.x = p.x; dragNode.y = p.y; dragNode.vx = dragNode.vy = 0;
+    moved = true; reheat(0.3);
+    return;
+  }
+  if(panning && last){
+    cam.x += ev.clientX-last.x; cam.y += ev.clientY-last.y;
+    last = {x:ev.clientX, y:ev.clientY}; moved = true;
+    return;
+  }
+  const hit = pick(ev.clientX, ev.clientY);
+  hover = hit;
+  if(hit){
+    tip.style.display='block';
+    tip.style.left=(ev.clientX+14)+'px';
+    tip.style.top=(ev.clientY+14)+'px';
+    tip.innerHTML = `<b>${esc(hit.l)}</b><br><span style="color:#8b95a5">
+      ${esc(view.types[hit.t])} · ${esc(t('tipEdges', {d: hit.d}))}</span>`;
+  } else tip.style.display='none';
+});
+window.addEventListener('mouseup', ev => {
+  if(dragNode && !moved){ select(dragNode); }
+  if(dragNode) dragNode = null;
+  if(panning && !moved){ select(pick(ev.clientX, ev.clientY)); }
+  panning = false; last = null; cv.classList.remove('dragging');
+});
+cv.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const f = ev.deltaY < 0 ? 1.12 : 1/1.12;
+  const r = cv.getBoundingClientRect();
+  const mx = ev.clientX-r.left-cv.clientWidth/2, my = ev.clientY-r.top-cv.clientHeight/2;
+  cam.x = mx - (mx-cam.x)*f; cam.y = my - (my-cam.y)*f;
+  cam.k *= f;
+}, {passive:false});
+cv.addEventListener('dblclick', ev => {
+  const hit = pick(ev.clientX, ev.clientY);
+  if(hit){ hit.fixed = false; reheat(0.3); }
+});
+
+function esc(s){
+  return String(s).replace(/[&<>"]/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function clearDetail(){
+  const box = document.getElementById('detail');
+  box.textContent = '';
+  const d = document.createElement('div');
+  d.className = 'empty';
+  d.textContent = T.detailEmpty;
+  box.appendChild(d);
+}
+
+function select(nd){
+  selected = nd;
+  const box = document.getElementById('detail');
+  if(!nd){ clearDetail(); return; }
+
+  const nbrs = [];
+  for(const e of edges){
+    if(e.s === nd.i) nbrs.push([nodes[e.t], view.edgeTypes[e.y], '→']);
+    else if(e.t === nd.i) nbrs.push([nodes[e.s], view.edgeTypes[e.y], '←']);
+  }
+  nbrs.sort((a,b)=> (b[0]?.d||0)-(a[0]?.d||0));
+
+  let html = `<div class="ttl">${esc(nd.l)}</div>
+    <div class="sub">${esc(view.types[nd.t])} · ${esc(nd.id)}</div><dl>`;
+  for(const [k,v] of Object.entries(nd.p || {})){
+    if(k === 'label') continue;
+    let val = esc(v);
+    if(k === 'url') val = `<a href="${esc(v)}" target="_blank"
+      style="color:#4C8BF5">${esc(String(v).slice(0,44))}…</a>`;
+    html += `<dt>${esc(k)}</dt><dd>${val}</dd>`;
+  }
+  html += `</dl><div class="nb"><h2 style="font-size:11px;color:#8b95a5;
+    text-transform:uppercase;letter-spacing:.08em;margin:14px 0 4px">
+    ${esc(t('neighbours', {n: nbrs.length}))}</h2>`;
+  for(const [o, et, dir] of nbrs.slice(0, 60)){
+    if(!o) continue;
+    html += `<div data-i="${o.i}"><span style="color:#8b95a5">${dir} ${esc(et)}</span>
+      &nbsp;${esc(o.l)}</div>`;
+  }
+  if(nbrs.length > 60)
+    html += `<div style="color:#8b95a5">${esc(t('neighboursMore', {n: nbrs.length-60}))}</div>`;
+  html += '</div>';
+  box.innerHTML = html;
+  box.querySelectorAll('.nb div[data-i]').forEach(d => {
+    d.onclick = () => {
+      const t = nodes[+d.dataset.i];
+      if(t){ select(t); cam.x = -t.x*cam.k; cam.y = -t.y*cam.k; }
+    };
+  });
+}
+
+/* ---------- 搜索 ---------- */
+document.getElementById('q').addEventListener('input', ev => {
+  const q = ev.target.value.trim().toLowerCase();
+  highlight = new Set();
+  if(q.length >= 2){
+    for(const nd of nodes){
+      if(nd.l.toLowerCase().includes(q) || nd.id.toLowerCase().includes(q))
+        highlight.add(nd.i);
+    }
+  }
+  document.getElementById('qhint').textContent =
+    q.length < 2 ? T.searchTooShort : t('searchHits', {n: highlight.size});
+  if(highlight.size === 1){
+    const t = nodes.find(n => highlight.has(n.i));
+    if(t){ select(t); cam.x = -t.x*cam.k; cam.y = -t.y*cam.k; }
+  }
+});
+
+/* ---------- 启动 ---------- */
+document.getElementById('t-views').textContent = T.viewsLabel;
+document.getElementById('t-search').textContent = T.searchLabel;
+document.getElementById('t-types').textContent = T.nodeTypesLabel;
+document.getElementById('t-hint').textContent = T.canvasHint;
+document.getElementById('relayout').textContent = T.relayout;
+document.getElementById('fit').textContent = T.fit;
+document.getElementById('q').placeholder = T.searchPlaceholder;
+
+const sel = document.getElementById('view');
+for(const [k, v] of Object.entries(DATA.views)){
+  const o = document.createElement('option');
+  o.value = k;
+  o.textContent = t('viewOption', {name: v.name, n: v.nodes.length, e: v.edges.length});
+  sel.appendChild(o);
+}
+sel.value = DATA.defaultView;
+sel.onchange = () => loadView(sel.value);
+document.getElementById('relayout').onclick = () => {
+  for(const nd of nodes){ if(nd.d) nd.fixed = false; }
+  ticks = 0; alpha = 1; running = true;
+  placeIsolated();
+};
+document.getElementById('fit').onclick = fit;
+window.addEventListener('resize', draw);
+
+loadView(DATA.defaultView);
+loop();
+</script>
+</body>
+</html>

@@ -589,6 +589,8 @@ def export(
     output: Optional[Path] = typer.Option(None, "--output", "-o"),
     default_view: str = typer.Option("tech", "--view",
                                      help="HTML 默认视图：tech | team | domain | full"),
+    lang: str = typer.Option("zh", "--lang",
+                             help="HTML 界面语言：zh | en（只影响导出的页面，不影响本命令）"),
     node_type: Optional[str] = typer.Option(None, "--node-type",
                                             help="只导出这些类型，逗号分隔"),
     around: Optional[str] = typer.Option(None, "--around",
@@ -598,12 +600,17 @@ def export(
                                       help="保留 _sources（体积大，可视化时是噪声）"),
 ):
     """把图谱导出成可视化 / 图分析工具能吃的格式。"""
-    from epistemic_agent.export.viewer import run_export, view_summary
+    from epistemic_agent.export.viewer import LANGUAGES, run_export, view_summary
+
+    if lang not in LANGUAGES:
+        console.print(f"[red]Unknown --lang {lang!r}[/red] — {' | '.join(LANGUAGES)}")
+        raise typer.Exit(1)
 
     proj = find_project()
     result = run_export(
         proj, fmt=fmt, output=output, default_view=default_view,
         node_type=node_type, around=around, hops=hops, keep_sources=keep_sources,
+        lang=lang,
     )
     if "error" in result:
         console.print(f"[red]{result['error']}[/red]")
@@ -613,7 +620,7 @@ def export(
         console.print(f"[dim]{note}[/dim]")
 
     if fmt == "html":
-        rows = view_summary(result["kg"])
+        rows = view_summary(result["kg"], lang=lang)
         from rich.table import Table
 
         t = Table(title="内置视图", title_justify="left", box=None)
